@@ -1,8 +1,11 @@
 ---
-layout: page
+layout: default
 title: 关于
+nav_order: 10
 permalink: /about/
 ---
+
+# 关于
 
 这个网站用于整理 **AI Agent 工程师知识体系**，记录我在学习和实践过程中的思考。
 

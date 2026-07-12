@@ -1,15 +1,19 @@
 title: "AI Agent 工程师知识体系"
-description: "记录 AI Agent 工程学习与实践的中文技术博客"
+description: "记录 AI Agent 工程学习与实践的中文技术文档"
 lang: zh-CN
 
 baseurl: "/ai-agent-engineering"
 
-theme: minima
+remote_theme: just-the-docs/just-the-docs@v0.10.1
+plugins:
+  - jekyll-remote-theme
 
-header_pages:
-  - about.md
+search_enabled: true
+heading_anchors: true
+color_scheme: light
 
-show_excerpts: true
+back_to_top: true
+back_to_top_text: "返回顶部"
 
 exclude:
   - Gemfile
