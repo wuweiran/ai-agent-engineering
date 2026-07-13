@@ -16,6 +16,7 @@ back_to_top: true
 back_to_top_text: "返回顶部"
 
 exclude:
+  - "**/CLAUDE.md"
   - Gemfile
   - Gemfile.lock
   - README.md
