@@ -14,7 +14,7 @@ permalink: /docs/backend/cache-consistency/
 
 ## 缓存用副本减少重复工作
 
-商品详情被大量用户重复读取，修改频率相对较低。Cache Aside 模式让应用先查询缓存，未命中时从数据库或业务服务加载，再写回缓存：
+商品详情被大量用户重复读取，修改频率相对较低。[Cache Aside](../interview/backend/cache/#cache-aside) 模式让应用先查询缓存，未命中时从数据库或业务服务加载，再写回缓存：
 
 ```text
 读取 product-detail:SKU-8812
