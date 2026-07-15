@@ -66,7 +66,7 @@ permalink: /docs/backend/incident-response/
 
 ## Trace 找到时间消耗的位置
 
-异常请求的 Trace 显示：
+异常请求的 Trace 显示。Trace 是一次请求跨组件执行形成的分布式调用链：
 
 ```text
 POST /orders/O-1042/pay            2.4s
