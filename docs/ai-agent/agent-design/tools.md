@@ -13,7 +13,7 @@ permalink: /docs/ai-agent/agent-design/tools/
 
 团队可以给它任意 SQL 和 HTTP 请求能力，但这样很难限制权限；也可以把每个字段都做成工具，结果是模型面对大量相似选项。
 
-应用把工具名称、描述和参数 Schema 提供给模型，模型返回结构化调用请求，Runtime 执行后再把结果送回模型。这个协议通常称为 Tool Calling 或 Function Calling。模型只提出调用，不会自己执行真实函数（[什么是 Function Calling？]({{ site.baseurl }}/docs/interview/ai-agent/#function-calling)）。
+应用把工具名称、描述和参数 Schema 提供给模型，模型返回结构化调用请求，Runtime 执行后再把结果送回模型。这个协议通常称为 Tool Calling 或 [Function Calling]({{ site.baseurl }}/docs/interview/ai-agent/#function-calling)。模型只提出调用，不会自己执行真实函数。
 
 **工具要把业务动作表达成模型容易选择、程序能够校验的接口。**模型提出意图，软件负责执行，业务服务继续掌握权限和规则。
 

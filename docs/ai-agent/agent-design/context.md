@@ -32,7 +32,7 @@ permalink: /docs/ai-agent/agent-design/context/
 
 ## 稳定规则和动态细节分开处理
 
-Agent 的职责、安全规则、任务目标和业务术语变化较慢，而且经常需要，可以在任务开始时加载。其中，System Prompt 通常承载模型身份、稳定行为边界和输出要求；它是 Context 的一部分，能够影响模型，却不能代替权限和业务校验（[System Prompt 是什么？]({{ site.baseurl }}/docs/interview/ai-agent/#system-prompt)）。客户状态、监控结果和日志片段变化快、范围大，更适合在需要时查询。
+Agent 的职责、安全规则、任务目标和业务术语变化较慢，而且经常需要，可以在任务开始时加载。其中，[System Prompt]({{ site.baseurl }}/docs/interview/ai-agent/#system-prompt) 通常承载模型身份、稳定行为边界和输出要求；它是 Context 的一部分，能够影响模型，却不能代替权限和业务校验。客户状态、监控结果和日志片段变化快、范围大，更适合在需要时查询。
 
 登录调查可以先取得租户、区域、版本和错误摘要。若症状指向服务故障，再查询监控；若故障时间靠近发布，再读取发布记录；最后只读取相关时间段的配置差异或日志片段。
 

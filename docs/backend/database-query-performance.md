@@ -52,7 +52,7 @@ ON orders (buyer_id, status, created_at DESC);
 最后按时间取最近记录
 ```
 
-若查询只按 `created_at` 搜索全站最近订单，这份索引未必合适；若经常只按 `buyer_id` 查询，它通常仍能利用最左侧前缀。索引设计来自真实访问模式，不能为每个字段各建一份后期待数据库自动组合出最佳路径（[什么是联合索引的最左前缀？]({{ site.baseurl }}/docs/interview/backend/database/#composite-index-leftmost-prefix)）。
+若查询只按 `created_at` 搜索全站最近订单，这份索引未必合适；若经常只按 `buyer_id` 查询，它通常仍能利用[最左侧前缀]({{ site.baseurl }}/docs/interview/backend/database/#composite-index-leftmost-prefix)。索引设计来自真实访问模式，不能为每个字段各建一份后期待数据库自动组合出最佳路径。
 
 ## 执行计划让判断有证据
 
@@ -67,11 +67,11 @@ ON orders (buyer_id, status, created_at DESC);
 
 一条查询有索引却仍然慢，可能因为条件匹配了表中大部分数据，优化器认为顺序扫描更便宜；也可能因为统计信息过旧，估算行数与实际差异很大（[为什么查询可能不使用索引？]({{ site.baseurl }}/docs/interview/backend/database/#index-not-used)）。
 
-排查慢查询要把 SQL、参数、数据分布和实际执行计划放在一起。只看平均耗时会忽略某些租户或时间范围触发的坏计划（[怎样使用执行计划排查慢查询？]({{ site.baseurl }}/docs/interview/backend/database/#query-execution-plan)）。
+排查慢查询要把 SQL、参数、数据分布和[实际执行计划]({{ site.baseurl }}/docs/interview/backend/database/#query-execution-plan)放在一起。只看平均耗时会忽略某些租户或时间范围触发的坏计划。
 
 ## 索引也有成本
 
-索引是额外的数据结构（[什么是数据库索引？]({{ site.baseurl }}/docs/interview/backend/database/#database-index)）。创建订单、修改状态时，数据库除了写业务表，还要更新相关索引。索引越多：
+[索引]({{ site.baseurl }}/docs/interview/backend/database/#database-index)是额外的数据结构。创建订单、修改状态时，数据库除了写业务表，还要更新相关索引。索引越多：
 
 - 写入需要维护的结构越多；
 - 占用的内存和磁盘越大；
@@ -84,7 +84,7 @@ ON orders (buyer_id, status, created_at DESC);
 
 即使定位很快，接口一次读取十万条订单，数据库、网络和应用内存仍要处理十万条结果。查询应该只选择当前页面需要的字段，并使用稳定分页。
 
-大偏移分页常写成：
+[大偏移分页]({{ site.baseurl }}/docs/interview/backend/database/#deep-pagination)常写成：
 
 ```sql
 ORDER BY created_at DESC
@@ -101,7 +101,7 @@ ORDER BY created_at DESC, order_id DESC
 LIMIT 20;
 ```
 
-`order_id` 作为相同时间下的稳定排序补充。游标分页让每页从明确位置继续，成本不会随着页码线性增加（[为什么深分页会越来越慢？]({{ site.baseurl }}/docs/interview/backend/database/#deep-pagination)）。
+`order_id` 作为相同时间下的稳定排序补充。游标分页让每页从明确位置继续，成本不会随着页码线性增加。
 
 ## N+1 查询把一次列表变成大量往返
 
@@ -112,11 +112,11 @@ LIMIT 20;
 20 次查询订单明细
 ```
 
-这称为 N+1 查询。单条 SQL 都很快，总延迟却包含大量数据库往返，连接池也会被占用。
+这称为 [N+1 查询]({{ site.baseurl }}/docs/interview/backend/database/#n-plus-one-query)。单条 SQL 都很快，总延迟却包含大量数据库往返，连接池也会被占用。
 
 修复方式取决于数据关系：可以批量使用 `WHERE order_id IN (...)` 查询明细，也可以在合适时连接查询或预加载。目标不是追求“一条 SQL 完成所有事情”，而是避免调用次数随着结果条数无意增长。
 
-ORM 能简化数据访问，也可能把属性访问悄悄变成查询。工程师仍要观察一次 API 实际执行了多少 SQL（[什么是 N+1 查询？]({{ site.baseurl }}/docs/interview/backend/database/#n-plus-one-query)）。
+ORM 能简化数据访问，也可能把属性访问悄悄变成查询。工程师仍要观察一次 API 实际执行了多少 SQL。
 
 ## 慢查询也可能在等待
 

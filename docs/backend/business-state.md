@@ -121,7 +121,7 @@ WHERE order_id = 'O-1042'
 
 成功后版本变成 8。电脑仍带版本 7 提交旧页面中的地址，更新零行。服务要求客户端读取最新订单，而不是覆盖手机刚完成的修改（[怎样避免并发修改互相覆盖？]({{ site.baseurl }}/docs/interview/backend/database/#prevent-lost-update)）。
 
-这称为乐观并发控制：读取时取得版本，写入时确认期间没有其他修改。它适合冲突不频繁、冲突后可以刷新重试的场景。大量请求长期争用同一资源时，锁、串行处理或重新设计业务竞争方式可能更合适（[乐观锁和悲观锁有什么区别？]({{ site.baseurl }}/docs/interview/backend/database/#optimistic-vs-pessimistic-locking)）。
+这称为[乐观并发控制]({{ site.baseurl }}/docs/interview/backend/database/#optimistic-vs-pessimistic-locking)：读取时取得版本，写入时确认期间没有其他修改。它适合冲突不频繁、冲突后可以刷新重试的场景。大量请求长期争用同一资源时，锁、串行处理或重新设计业务竞争方式可能更合适。
 
 ## 状态转换也要带着前置条件
 

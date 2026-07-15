@@ -13,7 +13,7 @@ permalink: /docs/ai-agent/agent-design/state-memory/
 
 恢复时，系统必须知道哪些结论已有证据、哪个查询需要重试，以及之前有没有执行过外部操作。一个月后再出现相似工单，团队又希望 Agent 能参考已经验证的兼容问题，却不能把上次客户的配置和临时猜测一起带进来。
 
-这两个需求分别对应状态和记忆。**状态服务当前任务，记忆服务未来任务。**（[Agent 的状态和记忆有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/#agent-state-and-memory)）
+这两个需求分别对应 [Agent 的状态和记忆]({{ site.baseurl }}/docs/interview/ai-agent/#agent-state-and-memory)。**状态服务当前任务，记忆服务未来任务。**
 
 ## 四种信息不要混在一起
 
