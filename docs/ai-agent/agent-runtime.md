@@ -12,13 +12,15 @@ permalink: /docs/ai-agent/agent-runtime/
 
 Agent 先了解仓库规则和相关代码，模型选择下一步，运行时检查并执行工具。测试失败后，结果重新进入上下文，模型再决定读取日志还是修改代码。循环持续到测试通过、任务失败或需要人工处理。
 
+这种“判断下一步、执行动作、观察结果、继续判断”的结构通常称为 ReAct 循环。ReAct 强调推理与行动根据环境反馈交替进行；它不要求把模型内部推理逐字展示给用户（[什么是 ReAct？](../interview/ai-agent/#react-loop)）。
+
 **模型负责提出下一步，运行时负责让这一步安全执行，并把结果带回下一轮。**
 
 ## Agent 系统和一次任务
 
 “Agent”有时指一套可以反复工作的系统，有时指这套系统围绕一个目标进行的一次运行。
 
-Claude Code 是代码 Agent 产品。它包含 Claude 模型、组织执行的运行时，以及搜索文件、编辑代码、运行终端等工具。用户每次交付一个目标，就启动一次具体任务。
+Claude Code 是代码 Agent 产品。它包含 Claude 模型、组织执行的 Runtime，以及搜索文件、编辑代码、运行终端等工具。Runtime 也常被称为 Agent Harness：它包围模型，负责 Context、工具、权限、状态和循环控制（[什么是 Agent Harness？](../interview/ai-agent/#agent-harness)）。用户每次交付一个目标，就启动一次具体任务。
 
 ```text
 Claude Code：可反复接收目标的 Agent 系统

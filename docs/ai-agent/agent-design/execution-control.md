@@ -3,7 +3,7 @@ layout: default
 title: 如何控制 Agent 的执行与终止
 parent: 如何设计一个 Agent 系统
 grand_parent: AI Agent 工程
-nav_order: 5
+nav_order: 6
 permalink: /docs/ai-agent/agent-design/execution-control/
 ---
 

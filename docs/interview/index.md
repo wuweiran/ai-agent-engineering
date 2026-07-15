@@ -1,7 +1,7 @@
 ---
 layout: default
 title: 面试题库
-nav_order: 5
+nav_order: 6
 has_children: true
 permalink: /docs/interview/
 ---
@@ -28,3 +28,4 @@ permalink: /docs/interview/
 ## 当前题库
 
 - [后端面试题](backend/)：数据库、缓存、消息与异步任务、分布式系统、性能与生产运行，以及大模型应用后端。
+- [AI Agent 常见面试题](ai-agent/)：Agent 定义、ReAct、工具与 MCP、Context、记忆、RAG、Planning、多 Agent、评测与生产运行。

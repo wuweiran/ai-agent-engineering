@@ -1,7 +1,7 @@
 ---
 layout: default
 title: 工作经历
-nav_order: 5
+nav_order: 7
 permalink: /docs/career/
 ---
 

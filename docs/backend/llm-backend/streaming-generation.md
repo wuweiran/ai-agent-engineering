@@ -31,7 +31,7 @@ created_at: 2026-07-14T11:20:00Z
 
 ## SSE 传输有类型的事件
 
-SSE 允许服务器在一条 HTTP 连接上持续推送文本事件：
+SSE 允许服务器在一条 HTTP 连接上持续推送文本事件（[怎样使用 SSE 推送 Agent 进度？](../../interview/ai-agent/#agent-sse-events)）：
 
 ```text
 event: generation.started
