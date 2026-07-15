@@ -83,7 +83,7 @@ WHERE sku_id = 'SKU-8812'
   AND available_stock >= 1;
 ```
 
-受影响一行，当前请求取得库存；更新零行，说明库存已经被别的请求拿走。页面几秒前显示“有货”只是当时的读取结果（[如何防止超卖？](../interview/backend/database/#prevent-overselling)）。
+受影响一行，当前请求取得库存；更新零行，说明库存已经被别的请求拿走。页面几秒前显示“有货”只是当时的读取结果（[如何防止超卖？]({{ site.baseurl }}/docs/interview/backend/database/#prevent-overselling)）。
 
 **会被并发改变的条件，必须在写入时再次确认。**
 
@@ -91,7 +91,7 @@ WHERE sku_id = 'SKU-8812'
 
 扣减库存以后还要写订单和明细。如果库存成功减少，订单写入却失败，商品会无故少一件；如果订单先创建，库存扣减失败，又会留下无法履约的订单。
 
-当这些数据位于同一个数据库并共同构成“下单成功”时，可以放进一个[数据库事务](../interview/backend/database/#database-transaction)：
+当这些数据位于同一个数据库并共同构成“下单成功”时，可以放进一个[数据库事务]({{ site.baseurl }}/docs/interview/backend/database/#database-transaction)：
 
 ```text
 开始事务
@@ -103,7 +103,7 @@ WHERE sku_id = 'SKU-8812'
 
 任何一步失败，事务回滚。事务边界来自业务承诺：只有订单记录和库存资格同时成立，系统才能返回下单成功。
 
-事务不能自动覆盖支付平台、短信服务等数据库外部系统。跨出本地事务后，需要稳定请求 ID、状态查询、消息和补偿处理结果未知，而不是无限延长数据库事务（[为什么不应在事务中等待远程调用？](../interview/backend/database/#remote-call-inside-transaction)）。
+事务不能自动覆盖支付平台、短信服务等数据库外部系统。跨出本地事务后，需要稳定请求 ID、状态查询、消息和补偿处理结果未知，而不是无限延长数据库事务（[为什么不应在事务中等待远程调用？]({{ site.baseurl }}/docs/interview/backend/database/#remote-call-inside-transaction)）。
 
 ## 版本号防止修改互相覆盖
 
@@ -119,9 +119,9 @@ WHERE order_id = 'O-1042'
   AND version = 7;
 ```
 
-成功后版本变成 8。电脑仍带版本 7 提交旧页面中的地址，更新零行。服务要求客户端读取最新订单，而不是覆盖手机刚完成的修改（[怎样避免并发修改互相覆盖？](../interview/backend/database/#prevent-lost-update)）。
+成功后版本变成 8。电脑仍带版本 7 提交旧页面中的地址，更新零行。服务要求客户端读取最新订单，而不是覆盖手机刚完成的修改（[怎样避免并发修改互相覆盖？]({{ site.baseurl }}/docs/interview/backend/database/#prevent-lost-update)）。
 
-这称为乐观并发控制：读取时取得版本，写入时确认期间没有其他修改。它适合冲突不频繁、冲突后可以刷新重试的场景。大量请求长期争用同一资源时，锁、串行处理或重新设计业务竞争方式可能更合适（[乐观锁和悲观锁有什么区别？](../interview/backend/database/#optimistic-vs-pessimistic-locking)）。
+这称为乐观并发控制：读取时取得版本，写入时确认期间没有其他修改。它适合冲突不频繁、冲突后可以刷新重试的场景。大量请求长期争用同一资源时，锁、串行处理或重新设计业务竞争方式可能更合适（[乐观锁和悲观锁有什么区别？]({{ site.baseurl }}/docs/interview/backend/database/#optimistic-vs-pessimistic-locking)）。
 
 ## 状态转换也要带着前置条件
 

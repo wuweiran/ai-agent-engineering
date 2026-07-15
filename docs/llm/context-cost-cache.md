@@ -64,4 +64,4 @@ Prompt Cache：复用相同输入前缀的计算
 
 观察时要同时记录输入 Token、输出 Token、首个结果等待时间、完整耗时、缓存命中、任务成功和严重错误。成本下降却让关键约束丢失，不是有效优化。
 
-**Context 管理的目标不是塞入最多信息，而是让模型以可接受的成本看到当前判断真正需要的内容。**（[怎样使用缓存优化大模型应用？](../interview/ai-agent/#llm-application-cache)）
+**Context 管理的目标不是塞入最多信息，而是让模型以可接受的成本看到当前判断真正需要的内容。**（[怎样使用缓存优化大模型应用？]({{ site.baseurl }}/docs/interview/ai-agent/#llm-application-cache)）

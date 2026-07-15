@@ -38,7 +38,7 @@ permalink: /docs/ai-agent/
 
 这四个阶段是本知识库理解 AI Agent 工程的主线。具体文章会继续拆解其中的问题，但主线不会随着文章数量变化。
 
-在掌握系统设计的基本问题后，[Claude Code 的 Agent 实现](claude-code/)会用一个成熟产品解释 Context 组装、工具循环、会话压缩和子 Agent 等 Runtime 机制。它是一组实现案例，不增加新的工程阶段。Token、提示词、RAG、幻觉和训练对齐等模型侧基础放在[大模型基础](../llm/)中，避免把所有与模型有关的内容都误当成 Agent Runtime。
+在掌握系统设计的基本问题后，[Claude Code 的 Agent 实现](claude-code/)会用一个成熟产品解释 Context 组装、工具循环、会话压缩和子 Agent 等 Runtime 机制。它是一组实现案例，不增加新的工程阶段。Token、提示词、RAG、幻觉和训练对齐等模型侧基础放在[大模型基础]({{ site.baseurl }}/docs/llm/)中，避免把所有与模型有关的内容都误当成 Agent Runtime。
 
 ## 模型与软件的分工原则
 

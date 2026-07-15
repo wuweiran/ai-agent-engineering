@@ -13,7 +13,7 @@ permalink: /docs/backend/llm-backend/agent-task-state/
 
 用户重新打开页面，系统必须回答：地址是否已经修改，任务应继续生成解释、重新执行，还是暂停核对。只保存聊天消息无法给出这些答案。
 
-状态、Context、会话历史和长期记忆各自承担什么职责，见[Agent 状态与记忆](../../ai-agent/agent-design/state-memory/)。这里从应用后端出发，讨论已经确定的任务状态怎样落到数据库，使调度、并发控制和故障恢复有可靠依据。
+状态、Context、会话历史和长期记忆各自承担什么职责，见[Agent 状态与记忆]({{ site.baseurl }}/docs/ai-agent/agent-design/state-memory/)。这里从应用后端出发，讨论已经确定的任务状态怎样落到数据库，使调度、并发控制和故障恢复有可靠依据。
 
 **持久状态要记录系统已经确认了什么，以及哪一步可以安全继续。**
 

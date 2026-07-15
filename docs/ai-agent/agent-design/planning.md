@@ -11,7 +11,7 @@ permalink: /docs/ai-agent/agent-design/planning/
 
 用户要求 Agent 调查一项跨地区登录故障，并交付影响范围、根因证据和恢复建议。系统可以让模型每取得一条结果就决定下一步，也可以先形成调查计划，再按新证据调整。
 
-Planning 是把目标转成可执行步骤、依赖和完成条件。它不是所有 Agent 都必须拥有的独立模块：短任务可以只决定下一步，长任务才更需要显式计划来保持方向和支持协作（[Agent 怎样进行任务规划？](../../interview/ai-agent/#agent-planning)）。
+Planning 是把目标转成可执行步骤、依赖和完成条件。它不是所有 Agent 都必须拥有的独立模块：短任务可以只决定下一步，长任务才更需要显式计划来保持方向和支持协作（[Agent 怎样进行任务规划？]({{ site.baseurl }}/docs/interview/ai-agent/#agent-planning)）。
 
 ## 计划从完成条件开始
 

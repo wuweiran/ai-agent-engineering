@@ -11,7 +11,7 @@ permalink: /docs/ai-agent/agent-design/multi-agent/
 
 故障调查需要搜索监控、发布记录和日志。一个 Agent 可以依次完成全部工作，也可以把相互独立的调查交给多个 Agent，最后汇总证据。
 
-多个 Agent 不会自动提高质量。它只有在任务可以清楚拆分，并行、专业化或 Context 隔离的收益高于协调成本时才值得使用（[多 Agent 有哪些协作模式？](../../interview/ai-agent/#multi-agent-patterns)）。
+多个 Agent 不会自动提高质量。它只有在任务可以清楚拆分，并行、专业化或 Context 隔离的收益高于协调成本时才值得使用（[多 Agent 有哪些协作模式？]({{ site.baseurl }}/docs/interview/ai-agent/#multi-agent-patterns)）。
 
 ## 顺序协作适合逐步加工
 
@@ -35,7 +35,7 @@ Manager 也可能成为瓶颈：它需要理解各项返回，处理失败并决
 
 最简单的方式是直接调用并等待结果。长任务可以通过消息传递，让执行者异步返回状态。共享状态便于多个 Agent 读取同一任务，但并发写入需要版本和归属规则。事件驱动方式耦合较低，却会带来顺序、重复和调试问题。
 
-无论使用哪种通信方式，结果都应包含稳定任务 ID、来源和状态。只用一段自然语言说“已经处理好”，无法支持恢复和冲突判断（[Agent 之间怎样传递信息？](../../interview/ai-agent/#multi-agent-communication)）。
+无论使用哪种通信方式，结果都应包含稳定任务 ID、来源和状态。只用一段自然语言说“已经处理好”，无法支持恢复和冲突判断（[Agent 之间怎样传递信息？]({{ site.baseurl }}/docs/interview/ai-agent/#multi-agent-communication)）。
 
 跨产品 Agent 通信还可能使用 A2A。它关注 Agent 发现、任务、消息、产物和状态交换。代码编辑器与编码 Agent 之间的 ACP 则解决客户端和 Agent 的交互。它们与 MCP 的边界不同：MCP 主要连接模型应用与工具和数据，不是通用的多 Agent 协作替代品。
 

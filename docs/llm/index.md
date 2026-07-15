@@ -32,4 +32,4 @@ permalink: /docs/llm/
 
 [大模型幻觉](hallucination/)区分事实错误、推理错误和错误引用，说明证据、检索、结构约束、评测与外部验证怎样降低风险。
 
-大模型基础解释模型和信息链本身。需要模型根据工具反馈持续改变路径时，进入[AI Agent 工程](../ai-agent/)；需要把生成过程接入 API、状态和异步任务时，进入[大模型应用后端](../backend/llm-backend/)。
+大模型基础解释模型和信息链本身。需要模型根据工具反馈持续改变路径时，进入[AI Agent 工程]({{ site.baseurl }}/docs/ai-agent/)；需要把生成过程接入 API、状态和异步任务时，进入[大模型应用后端]({{ site.baseurl }}/docs/backend/llm-backend/)。

@@ -69,4 +69,4 @@ permalink: /docs/ai-agent/llm-workflow-agent/
 - **固定工作流处理可预先安排的多步过程。**
 - **Agent 处理需要根据现场结果改变方向的任务。**
 
-确定某个子任务需要 Agent 后，下一步才是划分它内部的责任：哪些判断交给模型，哪些规则留给程序，哪些决定由人承担（[Agent 和 Workflow 有什么区别？](../interview/ai-agent/#agent-vs-workflow)）。
+确定某个子任务需要 Agent 后，下一步才是划分它内部的责任：哪些判断交给模型，哪些规则留给程序，哪些决定由人承担（[Agent 和 Workflow 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/#agent-vs-workflow)）。
