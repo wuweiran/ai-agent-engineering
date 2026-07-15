@@ -21,15 +21,6 @@ permalink: /docs/interview/ai-agent/
 
 相关内容：[LLM 应用、固定工作流与 Agent]({{ site.baseurl }}/docs/ai-agent/llm-workflow-agent/)。
 
-## Attention 的本质是什么？
-{: #attention-mechanism }
-
-Attention 根据相关程度聚合 Context 中的信息。每个位置映射成 Query、Key 和 Value，Query 与 Key 的匹配形成权重，再对 Value 加权汇总。
-
-多头注意力可以同时学习不同关系，KV Cache 则复用已有 Token 的 Key 和 Value，减少自回归生成中的重复计算。
-
-相关内容：[Token、Attention 与生成]({{ site.baseurl }}/docs/llm/model-inference/)。
-
 ## 模型和 Agent 有什么区别？
 {: #model-vs-agent }
 
@@ -108,12 +99,35 @@ System Prompt 通常承载模型在当前应用中的身份、稳定行为边界
 
 相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)。
 
+## Prompt Engineering 和 Context Engineering 有什么区别？
+{: #prompt-vs-context-engineering }
+
+Prompt Engineering 优化指令、Few-shot 示例和输出要求，帮助模型更稳定地使用已有能力。Context Engineering 管理模型本轮看到的信息流，包括系统规则、工具、检索材料、任务状态、记忆、排序和压缩。
+
+模型没理解任务时优先检查 Prompt；缺事实、资料过期或噪声过多时优先检查 Context。两者共同决定结果，但都不能代替权限和业务校验。
+
+相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)、[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)。
+
 ## 怎样设计和优化 Prompt？
 {: #prompt-optimization }
 
 先明确背景、目标、可用信息、限制和输出要求；边界难以理解时加入少量代表性示例。Prompt 不应靠不断追加规则增长，而要针对真实失败修改。
 
 优化时使用固定任务比较版本，观察质量、严重错误、Token、延迟和工具行为。修改多项机制时可做消融实验，确认改善究竟来自哪里。
+
+## DSPy 适合解决什么问题？
+{: #dspy-prompt-optimization }
+
+DSPy 把大模型程序中的指令和 Few-shot 示例作为可优化参数，在训练样本和评分函数上搜索更好的组合。它适合 Prompt 对措辞敏感、人工迭代缺乏稳定评测的场景。
+
+优化质量取决于样本和指标。必须保留独立测试集，并审查成本、延迟和严重失败；DSPy 不是脱离数据自动生成最佳 Prompt。
+
+## CoT 和 Self-Consistency 分别解决什么问题？
+{: #cot-self-consistency }
+
+CoT 通过分步推理或中间结构帮助模型处理复杂问题。Self-Consistency 采样多条独立推理路径，再对最终答案进行投票或一致性选择，以减少单一路径的偶然错误。
+
+它们会增加 Token、延迟和费用，也不适合无法比较答案的开放任务。应用不应依赖或保存模型不可见的内部推理；关键结论仍需外部证据验证。
 
 ## JSON Mode、结构化输出和工具调用有什么区别？
 {: #structured-output-vs-tool-calling }
@@ -149,14 +163,85 @@ Context 接近上限时可以摘要旧历史，但摘要有损，容易变化的
 
 重要的是保留来源、适用范围和失效条件。不能把模型猜测自动写成长期事实，也不能让不同用户或租户的记忆相互污染。
 
+## Claude Code 怎样管理当前 Context、会话记录和跨会话记忆？
+{: #claude-code-context-memory }
+
+Context Window 是下一次模型调用实际可见的信息工作集；Session Transcript 保存较完整的消息和工具记录，用于恢复与审计；Auto Memory 保存未来会话仍值得复用的项目经验。项目文件和 `CLAUDE.md` 则分别保存代码事实与团队规则。
+
+Context 接近上限时，Claude Code 会清理旧工具结果并压缩历史，但不会因此删除完整会话记录。压缩后若要继续修改代码，仍应重新读取磁盘上的当前文件。
+
+相关内容：[Claude Code Context 组装]({{ site.baseurl }}/docs/ai-agent/claude-code/context-assembly/)、[Claude Code 长会话]({{ site.baseurl }}/docs/ai-agent/claude-code/session-compaction/)。
+
+## Lost in the Middle 是什么？怎样缓解？
+{: #lost-in-the-middle }
+
+模型在长 Context 中可能更容易利用开头和结尾的信息，而忽略中间的关键证据。内容仍在窗口中，不代表会被稳定使用。
+
+可以减少无关材料、通过 Rerank 选出高价值候选，并把重要目标、约束和证据放在清楚位置。位置重排只能缓解问题，不能修复错误检索和过期知识。
+
+## Context 噪声太多时怎样处理？
+{: #context-noise-cleaning }
+
+先通过来源、时间、权限和相关性过滤材料，再让模型在回答前标记无关、冲突和过期内容。Self-Refine 一类自反馈方法可以迭代清洗和修订结果。
+
+同一模型可能重复原误判，因此不能让它自行删除关键反面证据。高风险内容仍需确定性规则、可信来源或独立评审。
+
+相关内容：[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)。
+
 ## 一个标准 RAG 系统包含哪些步骤？
 {: #rag-pipeline }
 
-离线阶段包括文档解析、Chunk、Embedding 和索引；在线阶段包括问题向量化、召回、过滤或混合检索、Rerank、组装 Context 和生成回答。
+离线阶段包括文档解析、Chunk、Embedding 和索引；在线阶段包括 Query 改写、问题向量化、召回、过滤或混合检索、Rerank、组装 Context 和生成回答。
 
 评测要分开检查检索是否找到正确证据，以及回答是否受到证据支持。
 
 相关内容：[RAG 与知识检索]({{ site.baseurl }}/docs/llm/rag/)。
+
+## Naive RAG、Advanced RAG 和 GraphRAG 有什么区别？
+{: #naive-advanced-graph-rag }
+
+Naive RAG 是最小文本检索链路：离线建立 Chunk 向量索引，在线对 Query 做向量 Top-K 检索，再把候选交给模型生成。文档切片不发生在用户提问之后。
+
+Advanced RAG 在文本检索前后增加 Query 改写、混合检索、过滤、Rerank 和 Context 选择，重点是提高召回与排序质量。GraphRAG 则显式建立实体和关系图，通过子图与路径取得多跳证据，也可以用社区摘要支持全局概括。
+
+它们不是所有系统都必须依次升级的三个版本。Advanced RAG 优化文本检索链路，GraphRAG 改变知识表示和检索路径；生产系统可以组合关键词、向量和图检索。
+
+## GraphRAG 适合什么问题？什么时候不值得使用？
+{: #graph-rag-use-cases }
+
+GraphRAG 适合实体关系密集、多跳关联、跨文档证据组合和资料库全局主题概括。例如查询公司之间的投资关系，或综合大量报告识别主要风险主题。
+
+简单 FAQ、局部事实查询和小型知识库通常先用混合检索与 Rerank。图谱抽取存在错误，知识更新还要维护实体、关系与摘要；只有评测证明普通文本检索持续败在关系或全局视角上时，这些成本才值得承担。
+
+相关内容：[RAG 与知识检索]({{ site.baseurl }}/docs/llm/rag/)。
+
+## RAG 为什么需要 Query 改写？
+{: #rag-query-rewriting }
+
+用户问题可能存在口语与文档术语的语义鸿沟、多轮指代和复杂子目标。Query 改写把它转换成一个或多个独立、明确、适合检索的查询，从而提高召回率。
+
+改写不是必选步骤。简单查询直接检索更快；复杂、多轮或初次召回不足时，改写才更有价值。
+
+## Query 改写有哪些常见策略？
+{: #rag-query-rewriting-strategies }
+
+上下文补全把“它为什么失败”改成带实体和条件的独立查询；查询扩展补充同义词、领域术语或多个改写；任务分解把多跳问题拆成子查询。
+
+HyDE 生成假设性相关文档并用其 Embedding 检索；Step-back 先提出更抽象的原则性问题。Step-back 与细粒度任务分解解决的不是同一问题。
+
+## Query Drift 怎样发现和控制？
+{: #rag-query-drift }
+
+改写可能丢失原问题中的实体、时间、租户或约束，使检索偏离用户意图。可以同时保留原始 Query 与改写 Query，混合召回并比较结果；改写缺少关键约束时拒绝使用。
+
+还可以比较语义相似度和实体覆盖，但固定阈值不是通用答案。最终应通过原问题对应的召回与回答指标评估。
+
+## Query 改写怎样控制延迟和成本？
+{: #rag-query-rewriting-cost }
+
+先做意图或复杂度路由，只对多轮、组合问题和召回不足的查询改写。可以使用较小模型生成改写，并将多个独立查询并行检索。
+
+多查询会增加向量检索、关键词检索和 Rerank 成本。优化目标是端到端回答质量，而不是生成尽可能多的 Query。
 
 ## Chunk 大小怎样选择？
 {: #rag-chunk-size }
@@ -255,19 +340,3 @@ Harness 让模型的概率判断进入确定的软件边界。这个术语没有
 SSE 是服务端到客户端的单向通道；客户端提交命令仍可使用普通 HTTP。断线不等于取消，重连应从持久任务状态或事件位置恢复。
 
 相关内容：[流式生成与任务事件]({{ site.baseurl }}/docs/backend/llm-backend/streaming-generation/)。
-
-## 相关的大模型训练问题
-
-## SFT、PPO、DPO 和 GRPO 分别解决什么问题？
-{: #llm-training-alignment }
-
-SFT 使用指令和参考回答让模型模仿期望行为。PPO 常结合奖励模型，通过强化学习优化策略。DPO 直接利用优选和劣选回答对调整相对概率，不需要单独训练奖励模型。GRPO 比较同一问题的一组回答，适合可自动验证奖励的任务。
-
-这些是模型训练与对齐方法，不是应用 Agent Runtime 的组成部分。
-
-## PPO 和 DPO 的主要区别是什么？
-{: #ppo-vs-dpo }
-
-PPO 通常先建立奖励信号，再通过在线强化学习更新策略，训练链路更复杂。DPO 直接从偏好回答对优化模型对优选答案的相对偏好，流程通常更简单稳定。
-
-DPO 不需要独立奖励模型，但仍需要高质量偏好数据、参考分布和完整评测；它不是不需要对齐数据的捷径。
