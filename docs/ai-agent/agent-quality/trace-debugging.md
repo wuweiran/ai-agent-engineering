@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何用 Trace 排查 Agent
-parent: 如何建立 Agent 质量体系
+title: Agent Trace 与故障定位
+parent: Agent 质量体系
 grand_parent: AI Agent 工程
 nav_order: 2
 permalink: /docs/ai-agent/agent-quality/trace-debugging/
 ---
 
-# 如何用 Trace 排查 Agent
+# Agent Trace 与故障定位
 
 评测发现一个数据生成任务失败了：用户要求企业 SAML 登录数据，Agent 最终却使用基础登录模板，平台运行因此报错。
 
@@ -15,7 +15,7 @@ permalink: /docs/ai-agent/agent-quality/trace-debugging/
 
 **Trace 排查要找到任务第一次偏离正确路径的位置。**
 
-## Trace 要记录哪些事实
+## Trace 中的关键事实
 
 一次任务跨越模型和多个软件组件。排查需要知道任务目标和运行版本，本轮装配了哪些规则、Skill 和检索结果，模型请求了什么工具与参数，工具和权限检查返回什么，任务状态怎样变化，又为什么结束。
 

@@ -1,17 +1,17 @@
 ---
 layout: default
-title: 模型发出工具调用后，后端怎样继续执行
-parent: 大模型应用怎样改变后端
+title: Agent 工具执行
+parent: 大模型应用后端
 grand_parent: 后端工程
 nav_order: 2
 permalink: /docs/backend/llm-backend/tool-execution-loop/
 ---
 
-# 模型发出工具调用后，后端怎样继续执行
+# Agent 工具执行
 
 用户对订单助手说：“查一下这双鞋为什么还没发货；如果还来得及，把地址改到公司。”模型查询订单和物流后，请求修改配送地址。
 
-工具应该怎样表达业务动作、参数和返回值，属于 Agent 设计问题，详见[如何为 Agent 设计工具](../../ai-agent/agent-design/tools/)。这里假设 `change_shipping_address` 的工具契约已经确定，只讨论模型产生 Tool Call 后，应用后端怎样把它变成一次安全、可恢复的业务执行。
+工具应该怎样表达业务动作、参数和返回值，属于 Agent 设计问题，详见[Agent 工具](../../ai-agent/agent-design/tools/)。这里假设 `change_shipping_address` 的工具契约已经确定，只讨论模型产生 Tool Call 后，应用后端怎样把它变成一次安全、可恢复的业务执行。
 
 **Tool Call 是模型提出的候选动作，只有业务服务确认成功后，动作才成为事实。**
 

@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 从 Claude Code 深入 Agent 系统
+title: Claude Code 的 Agent 实现
 parent: AI Agent 工程
 nav_order: 8
 has_children: true
 permalink: /docs/ai-agent/claude-code/
 ---
 
-# 从 Claude Code 深入 Agent 系统
+# Claude Code 的 Agent 实现
 
 用户对 Claude Code 说：“修复登录测试失败，并确认没有破坏其他登录方式。”随后发生的事情很像一位工程师在工作：读取项目规则，搜索代码，形成假设，修改文件，运行测试，再根据结果调整。
 
@@ -22,7 +22,7 @@ permalink: /docs/ai-agent/claude-code/
 
 这些细节帮助理解前文中的上下文、工具、状态和执行控制。它们不构成业务 Agent 的标准架构。代码 Agent 依赖仓库、文件和终端，退款或故障调查 Agent 会连接完全不同的业务对象；可以迁移的是设计判断。
 
-## 一次任务由谁完成
+## Claude Code 的三层结构
 
 Claude Code 的核心结构可以拆成三层：
 
@@ -36,7 +36,7 @@ Claude Code 的核心结构可以拆成三层：
 
 因此，一次任务并非一段很长的模型输出，而是多次模型调用与环境动作组成的闭环。
 
-## 四篇文章怎样衔接
+## Runtime 机制的阅读路径
 
 [Claude Code 怎样组装 Context](context-assembly/)从一次会话启动讲起，说明 System Prompt、环境信息、`CLAUDE.md`、Auto Memory、Skills、MCP 工具和会话历史分别在何时进入模型。
 

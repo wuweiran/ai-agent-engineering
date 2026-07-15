@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何控制 Agent 的执行与终止
-parent: 如何设计一个 Agent 系统
+title: Agent 执行与终止
+parent: Agent 系统设计
 grand_parent: AI Agent 工程
 nav_order: 6
 permalink: /docs/ai-agent/agent-design/execution-control/
 ---
 
-# 如何控制 Agent 的执行与终止
+# Agent 执行与终止
 
 登录故障调查已经查看了欧洲区域的服务状态和昨晚的发布记录。服务整体正常，发布记录却显示一项可疑配置变化。模型可以比较配置，也可以继续搜索日志，还可能因为不确定而重复前面的查询。
 
@@ -15,7 +15,7 @@ permalink: /docs/ai-agent/agent-design/execution-control/
 
 **模型提出下一步和结束建议，运行时根据任务状态、执行结果和完成条件决定是否继续。**
 
-## 先说清楚凭什么完成
+## 完成条件
 
 “调查登录问题”只说明了方向。更可执行的目标还要说明：影响范围需要明确，根因要有配置差异或错误记录支持，建议要与已确认原因一致，不允许修改生产环境；证据不足时，列出未知项并转人工。
 
@@ -31,7 +31,7 @@ permalink: /docs/ai-agent/agent-design/execution-control/
 
 运行时不必理解模型的全部推理。它可以观察任务状态是否发生有意义的变化。连续多轮没有新事实和待办变化时，系统可以要求模型调整方向；仍无进展，就停止并交接。
 
-## 失败后先判断结果是否确定
+## 失败结果的确定性
 
 发布记录工具可能限流、权限不足或超时。限流可以等待，权限不足需要授权，超时则可能只表示没有收到响应。
 

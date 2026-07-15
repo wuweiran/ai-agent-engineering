@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何观测生产 Agent 并处理事故
-parent: 如何保障 Agent 的生产运行
+title: Agent 可观测性与事故处理
+parent: Agent 生产运行
 grand_parent: AI Agent 工程
 nav_order: 3
 permalink: /docs/ai-agent/agent-production/observability-incident/
 ---
 
-# 如何观测生产 Agent 并处理事故
+# Agent 可观测性与事故处理
 
 数据生成 Agent 发布了新版登录数据 Skill。模型 API、MCP 和上传平台的成功率都在正常范围，值班工程师却收到另一类告警：已经被系统接收的任务中，最终完成平台运行的比例持续下降。
 
@@ -71,7 +71,7 @@ permalink: /docs/ai-agent/agent-production/observability-incident/
 
 **回滚恢复执行版本，任务记录决定已有业务状态怎样处理。**
 
-## 怎样确认服务已经恢复
+## 服务恢复的判断标准
 
 旧版恢复后，模型和 MCP 指标很快保持正常，但这并不能直接关闭事故。团队先确认新进入的企业 SAML 任务重新执行完整校验，再等待这些异步任务走到平台运行阶段，观察用户完成率是否回到正常范围。
 
@@ -79,7 +79,7 @@ permalink: /docs/ai-agent/agent-production/observability-incident/
 
 事故期间的临时查询和仪表盘也要保留下来。下一次出现类似现象时，值班工程师可以直接从任务类型、版本和失败阶段缩小范围。
 
-## 事故怎样变成系统改进
+## 从事故到系统改进
 
 复盘没有停在“Skill 少写了一条例外”。企业 SAML 必须完整校验已经是稳定业务规则，团队把它加入上传服务的确定性检查：任务没有对应的完整校验记录，服务端就拒绝上传。模型仍可判断如何修复数据，却不能跳过这个条件。
 

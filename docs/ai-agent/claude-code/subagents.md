@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 子 Agent 怎样隔离 Context
-parent: 从 Claude Code 深入 Agent 系统
+title: Claude Code 子 Agent
+parent: Claude Code 的 Agent 实现
 grand_parent: AI Agent 工程
 nav_order: 4
 permalink: /docs/ai-agent/claude-code/subagents/
 ---
 
-# 子 Agent 怎样隔离 Context
+# Claude Code 子 Agent
 
 主 Agent 为了调查登录问题，需要搜索认证、会话和测试目录。若它亲自读取每个候选文件，这些中间内容都会进入主 Context，并在后续每轮重复占用空间。Claude Code 可以把“查清会话超时如何实现”交给子 Agent，让搜索过程留在另一个 Context Window 中。
 
@@ -50,7 +50,7 @@ permalink: /docs/ai-agent/claude-code/subagents/
 
 这个设计对应业务系统中的任务拆分。故障调查主 Agent 可以让一个子 Agent 比较发布记录，让另一个检查错误分布；每个子 Agent 只拿到所需租户和时间范围，最终返回证据与未知项。
 
-## 中间信息为什么不会污染主 Context
+## 主 Context 的信息隔离
 
 子 Agent 在自己的窗口里调用 Grep、Read 和 Bash。文件正文、搜索结果与命令输出进入它的消息历史。任务完成后，主 Agent 只收到最终文本和少量运行元数据；这些内容作为 Agent 工具的结果进入主 Context。
 
@@ -80,7 +80,7 @@ permalink: /docs/ai-agent/claude-code/subagents/
 
 三者属于不同层次，不能因为“用了子 Agent”就假定数据和副作用已经隔离。
 
-## 子 Agent 怎样继续之前的工作
+## 子 Agent 的恢复
 
 每次新调用默认创建一个全新实例。需要在原调查上追问时，Runtime 可以根据 Agent ID 恢复原子 Agent。恢复后，它保留自己的完整会话历史，包括此前工具调用和结果，不必把调查过程重新塞进主 Context。
 
@@ -94,7 +94,7 @@ permalink: /docs/ai-agent/claude-code/subagents/
 
 继承全部历史会保留更多上下文，也失去了“把大量细节留在父会话之外”的优势。因此，默认应把子 Agent 当作显式任务接口；只有子任务确实需要主会话大量细节时，才考虑 Fork。
 
-## 什么时候值得拆分
+## 子 Agent 的适用条件
 
 是否使用子 Agent，可以看两个问题：
 

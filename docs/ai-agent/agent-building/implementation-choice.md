@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何选择 Agent 的实现方式
-parent: 如何实现一个 Agent 应用
+title: Agent 实现方式
+parent: Agent 应用实现
 grand_parent: AI Agent 工程
 nav_order: 1
 permalink: /docs/ai-agent/agent-building/implementation-choice/
 ---
 
-# 如何选择 Agent 的实现方式
+# Agent 实现方式
 
 团队确定任务需要 Agent 后，很容易开始比较框架功能：谁支持记忆、MCP、多 Agent 或工作流。真正影响长期开发的却是另一件事：团队需要控制哪部分，又愿意长期维护哪部分。
 
@@ -37,7 +37,7 @@ permalink: /docs/ai-agent/agent-building/implementation-choice/
 
 这类场景对异步执行、状态恢复和环境隔离的要求更强，因此团队承担的运行责任也更多。
 
-## 什么时候需要自建 Runtime
+## 自建 Runtime 的适用条件
 
 直接基于模型 API 自己实现上下文装配、工具循环、状态、权限、恢复和 Trace，会得到最大的控制力，也带来最大的维护成本。
 
@@ -45,7 +45,7 @@ permalink: /docs/ai-agent/agent-building/implementation-choice/
 
 平台少一个功能，并不自动意味着要自建 Runtime。高风险动作可以留在固定工作流中，Agent 只处理开放调查；产品外围也可以增加一层薄应用来补充状态和交互。
 
-## 判断时看四件事
+## 实现方式的选择依据
 
 首先看用户在哪里工作。内部开发者已经使用终端和仓库，代码 Agent 很自然；客服坐席工作在工单页面，切换到命令行会破坏流程。
 

@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何安全发布和升级 Agent
-parent: 如何保障 Agent 的生产运行
+title: Agent 发布与升级
+parent: Agent 生产运行
 grand_parent: AI Agent 工程
 nav_order: 2
 permalink: /docs/ai-agent/agent-production/release-upgrade/
 ---
 
-# 如何安全发布和升级 Agent
+# Agent 发布与升级
 
 数据生成 Agent 准备升级。新的 Skill 会生成 `enterprise-saml-v2` 模板，测试环境中的 MCP 已经支持它。生产环境却还有一些旧 MCP 实例，只认识 `enterprise-saml`。离线评测全部通过，灰度开始后，部分上传请求仍被拒绝。
 
@@ -50,7 +50,7 @@ execution_policy: v7
 
 前者发现“接不上”，后者发现“接得上，但做错了”。
 
-## 新旧版本如何过渡
+## 新旧版本的兼容过渡
 
 引入 v2 模板时，可以分五步完成：
 
@@ -64,7 +64,7 @@ execution_policy: v7
 
 工具返回结构变化也可以这样处理：先增加新字段并保留旧字段，等所有 Agent 迁移完成，再删除旧字段。
 
-## 正在运行的任务怎么办
+## 运行中任务的版本绑定
 
 数据生成任务可能等待用户确认或平台恢复，跨越几个小时。若任务中途切换 Skill 和工具版本，前半段与后半段会遵循不同规则。
 
@@ -74,7 +74,7 @@ execution_policy: v7
 
 任务之间切换版本相对简单；任务执行到一半再切换，就需要专门处理已有状态。
 
-## 先让谁使用新版本
+## 新版本的灰度范围
 
 离线评测覆盖不了所有真实项目和平台状态。新版本可以先用于测试项目，再交给内部团队试用，然后开放少量真实项目，最后扩大任务类型和流量。
 

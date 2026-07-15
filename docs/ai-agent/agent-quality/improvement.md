@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何根据评测结果改进 Agent
-parent: 如何建立 Agent 质量体系
+title: Agent 质量改进
+parent: Agent 质量体系
 grand_parent: AI Agent 工程
 nav_order: 3
 permalink: /docs/ai-agent/agent-quality/improvement/
 ---
 
-# 如何根据评测结果改进 Agent
+# Agent 质量改进
 
 Trace 已经确认：模型正确识别了企业 SAML 登录任务，Skill 却要求默认使用基础登录模板。根因找到后，工程师还不能简单增加一句更强硬的 Prompt，再看当前案例是否通过。
 

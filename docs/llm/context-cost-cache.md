@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 长 Context 怎样影响质量、延迟和成本
+title: 长 Context、压缩与缓存
 parent: 大模型基础
 nav_order: 3
 permalink: /docs/llm/context-cost-cache/
 ---
 
-# 长 Context 怎样影响质量、延迟和成本
+# 长 Context、压缩与缓存
 
 一个支持助手把完整聊天记录、几十篇文档和所有工具 Schema 一次交给模型。信息看似更充分，回答却变慢、费用上升，关键约束还偶尔被忽略。
 

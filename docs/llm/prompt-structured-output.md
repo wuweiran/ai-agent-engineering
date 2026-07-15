@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 提示词与结构化输出怎样约束模型
+title: Prompt 与结构化输出
 parent: 大模型基础
 nav_order: 2
 permalink: /docs/llm/prompt-structured-output/
 ---
 
-# 提示词与结构化输出怎样约束模型
+# Prompt 与结构化输出
 
 客服系统希望模型把工单整理成摘要、问题类别和建议动作。如果只说“分析这条工单”，模型可能返回一段自然语言，字段和粒度每次都不同，程序很难继续处理。
 

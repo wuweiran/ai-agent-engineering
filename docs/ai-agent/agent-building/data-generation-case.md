@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 一个数据生成 Agent 是怎样构建的
-parent: 如何实现一个 Agent 应用
+title: 数据生成 Agent 工程案例
+parent: Agent 应用实现
 grand_parent: AI Agent 工程
 nav_order: 3
 permalink: /docs/ai-agent/agent-building/data-generation-case/
 ---
 
-# 一个数据生成 Agent 是怎样构建的
+# 数据生成 Agent 工程案例
 
 某企业的测试平台需要不同格式的数据。工程师过去会查模板文档、编写 JSON 或 CSV、运行校验脚本，再把文件上传到平台。平台运行失败后，他们还要读取报告，修改数据并重新提交。
 
@@ -25,7 +25,7 @@ permalink: /docs/ai-agent/agent-building/data-generation-case/
 
 范围缩小后，团队可以用少量真实任务验证整条链路，而不必先建设一个通用数据平台。
 
-## 为什么先复用 Claude Code
+## 复用 Claude Code 的理由
 
 这项任务天然围绕文件展开，又需要反复运行脚本和修改内容。Claude Code 已经提供模型循环、文件工作区和终端工具，团队没有必要重新实现这些通用能力。
 
@@ -43,7 +43,7 @@ permalink: /docs/ai-agent/agent-building/data-generation-case/
 
 **复用成熟 Agent 产品，省下的是通用执行环境；任务状态、权限和业务结果仍然要由应用补齐。**
 
-## 一次任务怎样跑通
+## 一次任务的执行链路
 
 用户 `U-318` 在应用中选择项目 `login-load-test` 和环境 `eu-test`，输入：“生成 500 个企业 SAML 登录测试用户，上传后运行。”
 
@@ -67,7 +67,7 @@ permalink: /docs/ai-agent/agent-building/data-generation-case/
 
 **Agent 会话解释执行过程，业务任务承载系统对用户的承诺。**
 
-## 原型中的问题怎样改变设计
+## 从原型问题到系统设计
 
 最早的版本把所有生成规则都放在 `CLAUDE.md` 中。规则增加后，基础登录任务也会加载大量 SAML 细节，修改一种数据方法还可能影响其他任务。团队随后把稳定的项目边界留在 `CLAUDE.md`，把按任务加载的生成方法拆进 Skills。
 
@@ -77,7 +77,7 @@ permalink: /docs/ai-agent/agent-building/data-generation-case/
 
 这几个改动没有追求一开始设计出完整架构。每次真实失败都回答了同一个问题：缺失的能力应该落在方法、工具、任务应用，还是业务平台中？
 
-## 上线前怎样建立证据
+## 上线前的质量证据
 
 团队从支持范围中挑选少量有差异的任务：基础登录、企业 SAML、信息不足、项目无权限、校验失败，以及上传响应丢失。每个样本都检查最终数据、目标项目和平台运行，也检查是否跳过确认、重复上传或在结果未知时直接重试。
 

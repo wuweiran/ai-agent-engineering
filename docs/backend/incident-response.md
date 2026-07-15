@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 怎样观测并处理一次后端事故
+title: 可观测性与事故处理
 parent: 后端工程
 nav_order: 9
 permalink: /docs/backend/incident-response/
 ---
 
-# 怎样观测并处理一次后端事故
+# 可观测性与事故处理
 
 运动鞋促销开始二十分钟后，客服收到反馈：订单已经创建，支付页面却长时间显示“正在确认”。HTTP 成功率仍然正常，支付服务的平均延迟也没有明显变化。
 

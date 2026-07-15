@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 消息为什么会丢失或重复
+title: 可靠消息与投递语义
 parent: 后端工程
 nav_order: 5
 permalink: /docs/backend/message-delivery/
 ---
 
-# 消息为什么会丢失或重复
+# 可靠消息与投递语义
 
 订单 `O-1042` 创建后，系统要发布到期检查消息。数据库已经提交，应用却在消息发出前崩溃：用户看得到订单，队列里没有后续任务。
 

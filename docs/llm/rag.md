@@ -1,12 +1,12 @@
 ---
 layout: default
-title: RAG 怎样让模型使用外部知识
+title: RAG 与知识检索
 parent: 大模型基础
 nav_order: 4
 permalink: /docs/llm/rag/
 ---
 
-# RAG 怎样让模型使用外部知识
+# RAG 与知识检索
 
 企业支持助手要回答：“版本 4.2 的 SAML 证书错误怎样处理？”答案散落在产品手册、发布说明和事故复盘中，而且会持续更新。把所有文档都放进 Prompt 既昂贵，也会让无关内容淹没真正证据。
 

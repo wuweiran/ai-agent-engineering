@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 服务之间怎样处理超时和故障
+title: 超时、重试与故障隔离
 parent: 后端工程
 nav_order: 6
 permalink: /docs/backend/service-timeouts/
 ---
 
-# 服务之间怎样处理超时和故障
+# 超时、重试与故障隔离
 
 用户为订单 `O-1042` 创建支付。支付服务已经生成支付单 `P-8821`，响应却在返回途中丢失。订单服务等待两秒，只得到一个超时错误。
 

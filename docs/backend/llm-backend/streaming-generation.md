@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 一次模型回答怎样流式返回
-parent: 大模型应用怎样改变后端
+title: 流式生成与任务事件
+parent: 大模型应用后端
 grand_parent: 后端工程
 nav_order: 1
 permalink: /docs/backend/llm-backend/streaming-generation/
 ---
 
-# 一次模型回答怎样流式返回
+# 流式生成与任务事件
 
 用户打开订单助手，输入：“我买的鞋为什么还没发货？”模型需要读取订单和物流信息，再逐步生成解释。若后端一直等到完整内容产生，用户会在数秒内看不到任何反馈。
 

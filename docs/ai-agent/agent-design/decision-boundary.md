@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何划分模型与程序的决策边界
-parent: 如何设计一个 Agent 系统
+title: 模型、程序与人的决策边界
+parent: Agent 系统设计
 grand_parent: AI Agent 工程
 nav_order: 1
 permalink: /docs/ai-agent/agent-design/decision-boundary/
 ---
 
-# 如何划分模型与程序的决策边界
+# 模型、程序与人的决策边界
 
 团队已经确认复杂登录故障适合使用 Agent。现在要拆开内部任务：模型负责调查中的哪些判断，程序守住哪些规则，什么时候必须交给人。
 
@@ -52,7 +52,7 @@ permalink: /docs/ai-agent/agent-design/decision-boundary/
 
 人工介入因此是任务中的正常分支，不是系统失灵后的临时补丁。
 
-## 一次回滚怎样完成
+## 生产回滚中的责任分工
 
 生产回滚可以这样分工：模型综合证据并提出建议；程序检查租户、配置版本和回滚条件；值班工程师决定是否接受风险；部署服务执行回滚并观察错误率；模型再解释结果，判断是否继续调查。
 

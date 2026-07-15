@@ -1,13 +1,13 @@
 ---
 layout: default
-title: 如何为 Agent 设计工具
-parent: 如何设计一个 Agent 系统
+title: Agent 工具
+parent: Agent 系统设计
 grand_parent: AI Agent 工程
 nav_order: 4
 permalink: /docs/ai-agent/agent-design/tools/
 ---
 
-# 如何为 Agent 设计工具
+# Agent 工具
 
 客服 Agent 已经理解“客户被重复扣款”的工单。要继续处理，它还得查询订单和支付记录，判断能否退款，并在必要时提交申请。
 

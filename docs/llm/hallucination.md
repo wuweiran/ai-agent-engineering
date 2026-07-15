@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 大模型为什么会产生幻觉
+title: 大模型幻觉
 parent: 大模型基础
 nav_order: 5
 permalink: /docs/llm/hallucination/
 ---
 
-# 大模型为什么会产生幻觉
+# 大模型幻觉
 
 用户询问某次生产事故，模型给出一段流畅解释，还附上一条看似真实的发布记录。工程师检查系统后发现，发布编号根本不存在。
 

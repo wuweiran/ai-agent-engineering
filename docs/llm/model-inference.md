@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 大模型怎样处理文本并生成回答
+title: Token、Attention 与生成
 parent: 大模型基础
 nav_order: 1
 permalink: /docs/llm/model-inference/
 ---
 
-# 大模型怎样处理文本并生成回答
+# Token、Attention 与生成
 
 用户输入一句话时，模型并不是直接读取人类理解的“词义”。文本先变成 Token 和向量，Transformer 根据上下文计算信息之间的关系，再预测下一个 Token。输出 Token 被追加到 Context，模型继续预测，直到结束。
 

@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 后端系统怎样安全发布和演进
+title: 安全发布与系统演进
 parent: 后端工程
 nav_order: 10
 permalink: /docs/backend/release-evolution/
 ---
 
-# 后端系统怎样安全发布和演进
+# 安全发布与系统演进
 
 订单团队准备增加库存保留期限。新版本创建待支付订单时写入 `reservation_expires_at`，过期 Worker 根据它取消订单并释放库存。
 
@@ -14,7 +14,7 @@ permalink: /docs/backend/release-evolution/
 
 **发布是一段新旧代码、数据和任务同时存在的时期，不是把旧版本瞬间替换成新版本。**
 
-## 直接增加非空字段为什么会失败
+## 直接增加非空字段的风险
 
 团队最初准备执行：
 

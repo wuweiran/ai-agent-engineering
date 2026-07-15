@@ -1,13 +1,13 @@
 ---
 layout: default
-title: Claude Code 怎样组装 Context
-parent: 从 Claude Code 深入 Agent 系统
+title: Claude Code Context 组装
+parent: Claude Code 的 Agent 实现
 grand_parent: AI Agent 工程
 nav_order: 1
 permalink: /docs/ai-agent/claude-code/context-assembly/
 ---
 
-# Claude Code 怎样组装 Context
+# Claude Code Context 组装
 
 用户刚启动 Claude Code，还没有输入任务，模型已经拥有一部分信息：它知道自己有哪些内置工具，当前工作目录和操作系统是什么，仓库处于哪个分支，也可能看到了用户规则、项目规则和以前保存的经验。
 
@@ -31,7 +31,7 @@ permalink: /docs/ai-agent/claude-code/context-assembly/
 
 这一区分很重要。`CLAUDE.md` 能影响模型行为，却不是强制策略。真正禁止命令或文件访问，需要权限规则、Hook 或沙箱执行。
 
-## `CLAUDE.md` 怎样沿目录拼接
+## `CLAUDE.md` 的目录加载顺序
 
 Claude Code 从当前工作目录向上遍历目录树，查找每一级的 `CLAUDE.md` 和 `CLAUDE.local.md`。找到的内容不会互相覆盖，而是全部拼进 Context。
 
@@ -55,7 +55,7 @@ Claude Code 从当前工作目录向上遍历目录树，查找每一级的 `CLA
 
 `CLAUDE.md` 还支持 `@path` 导入。导入内容在会话启动时展开，递归深度最多四层。拆成多个文件可以改善维护，却不会节省 Context，因为被导入的正文仍会全部进入。
 
-## Memory 为什么只加载一个索引
+## Memory 的索引与按需读取
 
 Auto Memory 保存在 `~/.claude/projects/<project>/memory/`。入口文件是 `MEMORY.md`，可以再链接到 `debugging.md`、`api-conventions.md` 等主题文件。
 
@@ -66,7 +66,7 @@ Auto Memory 保存在 `~/.claude/projects/<project>/memory/`。入口文件是 `
 
 `CLAUDE.md` 和 Auto Memory 都跨会话，但写入者与可信度不同。前者由团队维护，表达项目要求；后者由 Claude 根据工作过程写入，适合保存构建命令、调试经验和用户偏好。两者都只是模型输入，不能替代程序约束。
 
-## Skills 怎样避免一次装入所有方法
+## Skills 的渐进加载
 
 如果每个工作流都写进 `CLAUDE.md`，会话一开始就要为大量暂时无关的步骤付出 Context。Skills 使用渐进披露解决这个问题。
 
@@ -79,7 +79,7 @@ Auto Memory 保存在 `~/.claude/projects/<project>/memory/`。入口文件是 `
 
 设置 `disable-model-invocation: true` 后，连描述也不会预先放入模型，只能由用户显式调用。Skill 引用的详细文档和示例仍可继续放在独立文件中，让 Claude 在需要时读取。
 
-## MCP 工具为什么只先暴露名称
+## MCP 工具的延迟发现
 
 工具定义包含名称、说明和输入 Schema。连接多个 MCP Server 后，完整工具定义可能占据大量 Context，而且工具集合一变化，稳定 Prompt 前缀也会变化。
 
@@ -94,7 +94,7 @@ Claude Code 默认启用 Tool Search：会话开始时只加载 MCP 工具名称
 
 内置文件、搜索和终端工具属于 Claude Code 的基础能力，不通过这套 MCP 延迟流程。Tool Search 主要解决可扩展工具生态的 Context 膨胀。
 
-## 文件和工具结果怎样进入后续调用
+## 文件与工具结果进入 Context
 
 第一次模型调用可以抽象为：
 
