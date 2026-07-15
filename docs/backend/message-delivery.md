@@ -26,11 +26,11 @@ permalink: /docs/backend/message-delivery/
 
 服务可能在两步之间崩溃。交换顺序也不安全：消息先发出而订单事务随后失败，消费者会收到一个并未成立的业务事实。
 
-问题不是数据库或消息队列不可靠，而是它们各自提交，普通代码无法让两个系统原子地共同成功。
+问题不是数据库或消息队列不可靠，而是它们各自提交，普通代码无法让两个系统原子地共同成功（[数据库已提交，消息发送失败怎么办？]({{ site.baseurl }}/docs/interview/backend/message-queue/#database-committed-message-failed)）。
 
 ## Outbox 先把“需要发送”保存成事实
 
-订单服务可以在创建订单的同一事务中写入 Outbox（待发送事件表）：
+订单服务可以在创建订单的同一事务中写入 [Outbox]({{ site.baseurl }}/docs/interview/backend/message-queue/#transactional-outbox)：
 
 ```sql
 BEGIN;
@@ -56,7 +56,7 @@ COMMIT;
 
 订单和待发送事件要么同时存在，要么同时不存在。独立发布进程扫描 `pending` 记录，把事件发送到 Broker。即使原请求所在实例重启，数据库仍然记得有一条消息尚未发布。
 
-Transactional Outbox 解决的不是“如何更快发消息”，而是：
+[Transactional Outbox]({{ site.baseurl }}/docs/interview/backend/distributed-system/#outbox-vs-transactional-message) 解决的不是“如何更快发消息”，而是：
 
 > **把未来必须完成的发送意图，与产生它的业务事实共同提交。**
 
@@ -88,9 +88,9 @@ Worker 的处理过程是：
 
 如果业务修改成功而确认没有到达，Broker 只知道“这条消息尚未确认”，不知道订单数据库已经发生什么。再次投递是避免未完成工作永久消失的合理选择。
 
-这就是常见的至少一次投递：消息有机会被处理，但同一事件也可能出现多次。消费者必须让同一业务意图重复到达时产生同一个结果。
+这就是常见的[至少一次投递]({{ site.baseurl }}/docs/interview/backend/message-queue/#message-delivery-semantics)：消息有机会被处理，但同一事件也可能出现多次。消费者必须让同一业务意图重复到达时产生同一个结果。
 
-## 幂等要落实到业务结果
+## [消费幂等]({{ site.baseurl }}/docs/interview/backend/message-queue/#consumer-idempotency)要落实到业务结果
 
 订单过期事件可以通过状态条件天然去重：
 
@@ -115,7 +115,7 @@ WHERE order_id = 'O-1042'
 
 最理想的接口允许把 `event_id` 作为外部幂等键：重复请求返回同一发送结果。外部服务不支持幂等和结果查询时，系统无法凭空获得“绝不漏发且绝不重复”的保证，只能根据业务风险选择更可接受的一边，并通过人工核对或补偿降低影响。
 
-这也是 Exactly Once 容易被误解的地方。Broker 可以在自己的边界内提供很强的生产和消费语义，但不能自动让订单数据库、短信平台和支付系统参加同一个事务。
+这也是 [Exactly Once 的边界]({{ site.baseurl }}/docs/interview/backend/message-queue/#exactly-once-boundary)。Broker 可以在自己的边界内提供很强的生产和消费语义，但不能自动让订单数据库、短信平台和支付系统参加同一个事务。
 
 **业务上只发生一次，是稳定身份、状态条件、唯一约束和结果查询共同形成的效果。**
 
@@ -129,15 +129,15 @@ order.paid
 order.cancelled
 ```
 
-分区、重试和不同生产者可能改变到达顺序。使用 `order_id` 作为分区键可以减少乱序，却不能消除历史消息重放等情况。
+分区、重试和不同生产者可能改变到达顺序。使用 `order_id` 作为分区键可以减少乱序，却不能消除历史消息重放等情况（[消息顺序怎样保证？]({{ site.baseurl }}/docs/interview/backend/message-queue/#message-ordering)）。
 
 事件应携带聚合 ID 和版本，消费者只接受符合当前状态的转换。迟到的 `order.created` 不能把已支付订单退回待支付；缺少必要前置状态时，可以回查权威订单，而不是猜测事件顺序。
 
 ## 积压和死信也要连接业务结果
 
-持续无法处理的消息不应无限重试并阻塞后续工作。有限重试后，可以把原事件 ID、消费者版本、错误和业务资源保存到异常任务或死信队列，修复后仍使用原身份重新处理。
+持续无法处理的消息不应无限重试并阻塞后续工作。有限重试后，可以把原事件 ID、消费者版本、错误和业务资源保存到异常任务或[死信队列]({{ site.baseurl }}/docs/interview/backend/message-queue/#dead-letter-queue)，修复后仍使用原身份重新处理。
 
-观察消息链路时，队列长度只是线索。Outbox 最老未发布时间、消息处理延迟和死信数量能说明传输情况，订单是否真的过期取消并释放库存才说明业务承诺是否完成。
+观察消息链路时，队列长度只是线索。Outbox 最老未发布时间、消息处理延迟和死信数量能说明传输情况，订单是否真的过期取消并释放库存才说明业务承诺是否完成（[怎样判断消息链路恢复？]({{ site.baseurl }}/docs/interview/backend/message-queue/#message-recovery-complete)）。
 
 ## 可靠消息的因果链
 

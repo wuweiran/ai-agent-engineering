@@ -11,7 +11,7 @@ permalink: /docs/backend/llm-backend/streaming-generation/
 
 用户打开订单助手，输入：“我买的鞋为什么还没发货？”模型需要读取订单和物流信息，再逐步生成解释。若后端一直等到完整内容产生，用户会在数秒内看不到任何反馈。
 
-流式返回改善了等待体验，也把一次调用变成持续一段时间的状态过程。**流是临时传输过程，持久状态才是系统可以重新确认和恢复的事实。**
+[流式返回]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#llm-streaming-purpose)改善了等待体验，也把一次调用变成持续一段时间的状态过程。**流是临时传输过程，持久状态才是系统可以重新确认和恢复的事实。**
 
 ## 后端先给生成一个稳定身份
 
@@ -47,7 +47,7 @@ event: message.completed
 data: {"generation_id":"G-2048","message_id":"M-302"}
 ```
 
-事件类型使客户端能够区分片段、完成、失败和取消，序号用于发现缺失与重复。用户消息仍可通过普通 POST 提交，服务器到浏览器的进度使用 SSE；只有产品需要频繁双向实时控制时，才需要考虑 WebSocket。
+[事件类型和序号]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#sse-event-schema)使客户端能够区分片段、完成、失败和取消，并发现缺失与重复。用户消息仍可通过普通 POST 提交，服务器到浏览器的进度使用 SSE；只有产品需要频繁双向实时控制时，才需要考虑 WebSocket。
 
 协议选择来自交互方向，不来自“AI 应用必须实时”。
 
@@ -71,9 +71,9 @@ Final Message：正常结束并通过检查后的最终结果
 
 用户点击“停止”表达了明确意图：后端检查生成属于当前用户，保存取消状态，再尽力停止上游模型调用。已经产生的 Token 和已经发送的片段无法收回，重复取消应返回同一最终状态。
 
-浏览器断线只说明当前订阅消失，可能来自切换网络或刷新页面。产品可以为短问答选择断线即取消，也可以让长任务继续；这项策略必须显式定义，不能偶然取决于哪个进程持有 Socket。
+[浏览器断线不等于任务取消]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#disconnect-vs-cancel)。断线只说明当前订阅消失，可能来自切换网络或刷新页面。产品可以为短问答选择断线即取消，也可以让长任务继续；这项策略必须显式定义，不能偶然取决于哪个进程持有 Socket。
 
-当任务独立继续时：
+当任务独立继续时，传输通道与任务生命周期需要分离（[轮询、回调和 SSE 的选择]({{ site.baseurl }}/docs/interview/backend/api-application/#polling-webhook-sse)）：
 
 ```text
 后台执行拥有任务生命周期
@@ -85,7 +85,7 @@ SSE 连接只订阅进度
 
 ## 重连要补回可恢复的进度
 
-SSE 不保证客户端收到断线期间的事件。需要恢复时，事件使用稳定 ID 或序号，客户端携带最后位置重新订阅：
+SSE 不保证客户端收到断线期间的事件。[重连恢复]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#sse-reconnect-replay)需要使用稳定事件 ID 或序号，客户端携带最后位置重新订阅：
 
 ```http
 GET /api/generations/G-2048/events?after=17

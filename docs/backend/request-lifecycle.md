@@ -35,17 +35,17 @@ HTTP 只规定请求怎样传输。它不会判断库存是否充足、优惠券
 
 ## 请求先经过解析和入参校验
 
-Web 框架根据 `POST /api/orders` 找到处理函数并解析 JSON，随后进行**入参校验**：商品列表不能为空，数量必须是正整数，地址 ID 必须提供且格式合法。
+Web 框架根据 `POST /api/orders` 找到处理函数并解析 JSON，随后进行[入参校验]({{ site.baseurl }}/docs/interview/backend/api-application/#input-vs-business-validation)：商品列表不能为空，数量必须是正整数，地址 ID 必须提供且格式合法。
 
 入参校验只能证明请求符合接口要求。`SKU-8812` 可能已经下架，`ADDR-52` 可能不属于当前用户，`CP-20` 也可能不适用于这件商品。这些要在取得身份和业务数据后继续判断。
 
 **入参校验回答“输入能否被程序处理”，业务校验回答“这次操作能否成立”。**
 
-参数进入数据库时还要使用参数绑定、参数化查询或 ORM，不能拼接成 SQL。错误输入应该成为稳定的客户端错误，而不是泄露内部堆栈。
+参数进入数据库时还要使用[参数化查询]({{ site.baseurl }}/docs/interview/backend/security-auth/#sql-injection)或 ORM，不能拼接成 SQL。错误输入应该成为稳定的客户端错误，而不是泄露内部堆栈。
 
 ## 鉴权限定可以操作的资源
 
-后端先确认调用者是谁，再确认他能操作什么，这个过程通常统称为鉴权。
+后端先确认调用者是谁，再确认他能操作什么，这个过程通常统称为[鉴权]({{ site.baseurl }}/docs/interview/backend/security-auth/#authentication-authorization)。
 
 请求携带访问令牌。后端验证令牌后，从认证信息中取得当前身份：
 
@@ -67,9 +67,9 @@ WHERE address_id = 'ADDR-52'
   AND tenant_id = 'TENANT-7';
 ```
 
-如果用户把地址 ID 换成别人的值，查询就不会返回记录。只检查“地址存在”，却不检查它与当前用户的归属关系，会造成越权访问。
+如果用户把地址 ID 换成别人的值，查询就不会返回记录。只检查“地址存在”，却不检查它与当前用户的归属关系，会造成[对象级越权]({{ site.baseurl }}/docs/interview/backend/security-auth/#object-level-authorization)。
 
-不同资源有不同的授权规则：地址需要检查所属用户，优惠券还要检查领取人和适用范围，多租户数据则始终不能越过 `tenant_id` 边界。服务之间的机器凭据只能证明哪个服务正在调用，不能代替最终用户的资源权限。
+不同资源有不同的授权规则：地址需要检查所属用户，优惠券还要检查领取人和适用范围，[多租户数据]({{ site.baseurl }}/docs/interview/backend/security-auth/#multi-tenant-isolation)则始终不能越过 `tenant_id` 边界。服务之间的机器凭据只能证明哪个服务正在调用，不能代替最终用户的资源权限（[服务身份与用户身份]({{ site.baseurl }}/docs/interview/backend/security-auth/#service-vs-user-identity)）。
 
 ## 业务校验确认订单成立条件
 
@@ -85,7 +85,7 @@ createOrder(
 )
 ```
 
-这一步属于**业务校验**。业务层从可信系统取得商品售价，检查商品状态、优惠资格、地址范围和库存条件，再计算运费、折扣与应付金额。即使以后下单还可以由客服后台或内部任务触发，这些规则仍然必须执行。
+这一步属于[业务校验]({{ site.baseurl }}/docs/interview/backend/api-application/#input-vs-business-validation)。业务层从可信系统取得商品售价，检查商品状态、优惠资格、地址范围和库存条件，再计算运费、折扣与应付金额。即使以后下单还可以由客服后台或内部任务触发，这些规则仍然必须执行。
 
 路由层理解 Header、JSON 和状态码；业务层理解买家、商品和交易规则；数据访问层负责把结果落实到存储。边界清楚的目的不是追求固定分层，而是避免网络协议、业务规则和数据库细节互相混杂。
 
@@ -132,7 +132,7 @@ Location: /api/orders/O-1042
 }
 ```
 
-`pending_payment` 说明订单已经创建，但支付尚未完成。API 不应把中间过程包装成比数据库更确定的结果。
+`pending_payment` 说明订单已经创建，但支付尚未完成。[HTTP 状态码]({{ site.baseurl }}/docs/interview/backend/api-application/#http-success-status)和响应内容都不应把中间过程包装成比数据库更确定的结果。
 
 错误也要让调用方知道下一步能做什么。格式错误可以修正后重试，身份失效需要重新登录，库存冲突需要刷新状态。内部故障或网络超时则可能让客户端不知道订单是否已经创建，不能一律提示“请再次提交”。
 
@@ -140,7 +140,7 @@ Location: /api/orders/O-1042
 
 订单已经提交，响应却在返回途中丢失。用户再次点击时，如果后端把它当作新操作，就可能创建两张订单。
 
-`Idempotency-Key: checkout-7f3c` 为这次购买意图提供稳定身份。数据库可以对 `buyer_id + idempotency_key` 建立唯一约束：原订单已经创建就返回同一个结果；原请求仍在处理中就返回可查询状态；明确没有产生订单时才重新执行。
+[Idempotency-Key]({{ site.baseurl }}/docs/interview/backend/api-application/#create-api-idempotency) `checkout-7f3c` 为这次购买意图提供稳定身份。数据库可以对 `buyer_id + idempotency_key` 建立唯一约束：原订单已经创建就返回同一个结果；原请求仍在处理中就返回可查询状态；明确没有产生订单时才重新执行。
 
 幂等键必须进入持久状态和并发约束。每次重试生成新键，或者只把键写在日志里，都无法阻止重复结果。
 
@@ -148,7 +148,7 @@ Location: /api/orders/O-1042
 
 订单与必要库存结果必须在响应前确认，因为用户看到的承诺是“订单已经创建”。短信、推荐更新和报表不影响这个结果，可以在请求结束后继续。
 
-同步边界不是由代码执行时间决定，而由当前 API 的业务承诺决定：
+[同步与异步的接口边界]({{ site.baseurl }}/docs/interview/backend/api-application/#async-api-boundary)不是由代码执行时间决定，而由当前 API 的业务承诺决定：
 
 ```text
 用户必须立刻知道其结果

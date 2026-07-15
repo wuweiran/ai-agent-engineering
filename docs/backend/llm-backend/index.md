@@ -11,7 +11,7 @@ permalink: /docs/backend/llm-backend/
 
 电商系统增加了订单助手。用户不再只点击“查询物流”，还可以问：“这双鞋为什么没发货？如果还来得及，把地址改到公司。”
 
-原有订单、物流和地址服务仍然掌握业务事实。大模型增加的是一种新的计算方式：它根据 Context 生成文字，也可以根据中间结果提出下一项工具调用。这个计算过程持续更久、按 Token 消耗资源，输出也不像普通函数那样完全确定。
+原有订单、物流和地址服务仍然掌握业务事实。大模型增加的是一种新的计算方式：它根据 Context 生成文字，也可以根据中间结果提出下一项工具调用。这个计算过程持续更久、按 Token 消耗资源，输出也不像普通函数那样完全确定（[大模型后端怎样控制 Token、延迟和成本？]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#llm-token-latency-cost)）。
 
 应用后端要把这种不确定能力放进确定的业务边界：
 
@@ -25,7 +25,7 @@ permalink: /docs/backend/llm-backend/
 持久状态记录任务已经进行到哪里
 ```
 
-身份、权限、订单状态和真实业务动作仍然由程序控制。模型看到一段订单描述，不代表它获得了订单权限；模型说“地址已修改”，也不能代替订单服务的成功回执。
+身份、权限、订单状态和真实业务动作仍然由程序控制。模型看到一段订单描述，不代表它获得了订单权限；[模型文本也不能代替业务事实]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#model-text-vs-business-fact)。
 
 ## 模型调用的特殊约束
 
@@ -53,7 +53,7 @@ permalink: /docs/backend/llm-backend/
 
 ## 多轮任务的独立状态
 
-一次 Agent 任务可能进行多轮模型调用、工具执行和用户确认。只保存最后一条聊天消息，服务重启后无法判断已经执行过哪些动作，尤其无法处理“外部修改可能成功但响应丢失”的情况。
+一次 Agent 任务可能进行多轮模型调用、工具执行和用户确认。[只保存聊天记录]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#agent-task-vs-conversation)，服务重启后无法判断已经执行过哪些动作，尤其无法处理“外部修改可能成功但响应丢失”的情况。
 
 [Agent 任务的持久状态](agent-task-state/)从恢复场景倒推最小状态：Task 保存目标和总体阶段，Run 区分执行尝试，Step 标记稳定执行边界，Tool Call 记录有副作用动作是否已确认。
 

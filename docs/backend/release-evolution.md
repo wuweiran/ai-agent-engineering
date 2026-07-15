@@ -40,7 +40,7 @@ ADD COLUMN reservation_expires_at TIMESTAMP NULL;
 
 新代码稳定写入后，后台任务分批回填仍有效的旧订单。回填限制批量大小和数据库负载，保存进度并允许暂停，避免一个大事务锁住生产表。
 
-只有确认所有实例、Worker 和脚本都支持新字段，历史数据也已经迁移，才增加非空约束并删除旧兼容逻辑。
+只有确认所有实例、Worker 和脚本都支持新字段，历史数据也已经迁移，才增加非空约束并删除旧兼容逻辑。这种[扩展、迁移、收缩]({{ site.baseurl }}/docs/interview/backend/performance-production/#schema-compatible-deployment)让新旧版本在发布期间保持兼容。
 
 ```text
 扩展：让新旧版本都能运行
@@ -54,7 +54,7 @@ ADD COLUMN reservation_expires_at TIMESTAMP NULL;
 
 订单详情增加可选字段，通常不会破坏会忽略未知字段的客户端；直接改名、删除字段或改变原有含义，则可能让尚未升级的移动端和合作方失败。
 
-替换字段时，可以先同时提供新旧表示，观察旧字段使用量，调用方迁移完成后再移除。兼容期由真实调用方升级速度决定，不由服务端部署完成时间决定。
+[替换 API 字段]({{ site.baseurl }}/docs/interview/backend/api-application/#api-field-migration)时，可以先同时提供新旧表示，观察旧字段使用量，调用方迁移完成后再移除。兼容期由真实调用方升级速度决定，不由服务端部署完成时间决定。
 
 消息存活得更久。旧消息可能在队列和死信中停留数天，新消费者必须仍能理解旧格式；新生产者增加字段时，应优先采用可选扩展并携带事件版本。
 
@@ -66,11 +66,11 @@ ADD COLUMN reservation_expires_at TIMESTAMP NULL;
 
 简单规则更适合把稳定业务数据写入任务，例如明确保存 `reservation_expires_at`，让任何兼容 Worker 都能重新判断。复杂工作流则要保存状态机版本，或者在旧任务结束前保留相应执行器。
 
-发布前不仅要看正在处理的 HTTP 请求，还要清点等待、运行和失败重试的任务。新请求切换成功，不代表已有工作已经安全迁移。
+发布前不仅要看正在处理的 HTTP 请求，还要清点等待、运行和失败重试的[长任务]({{ site.baseurl }}/docs/interview/backend/performance-production/#long-running-task-versioning)。新请求切换成功，不代表已有工作已经安全迁移。
 
 ## 灰度要覆盖完整业务周期
 
-新版本先处理少量可识别流量。每笔请求、订单和任务都能关联版本或功能开关，团队才可以比较新旧结果。
+[灰度发布]({{ site.baseurl }}/docs/interview/backend/performance-production/#canary-deployment)让新版本先处理少量可识别流量。每笔请求、订单和任务都能关联版本或功能开关，团队才可以比较新旧结果。
 
 库存期限功能不能只观察部署成功和接口错误率。它真正承诺的是：新订单写入期限，到时只取消仍待支付的订单，库存只释放一次，旧版本仍能读取新数据。
 
@@ -80,11 +80,11 @@ ADD COLUMN reservation_expires_at TIMESTAMP NULL;
 
 ## 回滚代码不会撤销已经发生的现实
 
-灰度异常后，流量可以切回旧应用版本，但生产中已经留下新字段、新格式消息、部分回填数据和新版本创建的任务。
+灰度异常后，流量可以切回旧应用版本。无论使用[蓝绿、滚动还是灰度发布]({{ site.baseurl }}/docs/interview/backend/performance-production/#deployment-strategies)，生产中都可能已经留下新字段、新格式消息、部分回填数据和新版本创建的任务。
 
 旧版本若不能读取这些状态，回滚会触发第二次故障。因此，扩展阶段的结构通常保留到回滚窗口结束，旧消费者也要能够忽略或处理新字段。
 
-已经取消的订单、释放的库存和发送的通知不会因代码回滚自动撤销。回滚方案需要同时回答：怎样阻止新影响，以及怎样处理新版本已经产生的数据和外部副作用。
+已经取消的订单、释放的库存和发送的通知不会因代码回滚自动撤销（[回滚为什么不能恢复全部业务状态？]({{ site.baseurl }}/docs/interview/backend/performance-production/#rollback-business-state)）。回滚方案需要同时回答：怎样阻止新影响，以及怎样处理新版本已经产生的数据和外部副作用。
 
 **代码回滚恢复执行逻辑，数据迁移和补偿处理已经发生的业务状态。**
 
@@ -92,7 +92,7 @@ ADD COLUMN reservation_expires_at TIMESTAMP NULL;
 
 连接池、超时、并发和功能开关可以不部署代码就覆盖所有实例，影响往往比代码发布更快。重要配置同样需要版本、范围校验、小流量生效、指标关联和已验证的恢复值。
 
-动态配置不是发布治理的例外。没有灰度和审计的一次全局修改，可能比应用部署具有更大的故障半径。
+[配置变更]({{ site.baseurl }}/docs/interview/backend/performance-production/#configuration-deployment)不是发布治理的例外。没有灰度和审计的一次全局修改，可能比应用部署具有更大的故障半径。
 
 ## 迁移结束以后要删除过渡状态
 

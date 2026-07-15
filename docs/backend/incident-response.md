@@ -16,7 +16,7 @@ permalink: /docs/backend/incident-response/
 
 ## HTTP 200 也可能代表用户失败
 
-“支付系统有问题”还不能指导行动。值班工程师先把影响描述成可以验证的事实：
+“支付系统有问题”还不能指导行动。值班工程师先[确定影响范围]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-impact-scope)，把影响描述成可以验证的事实：
 
 ```text
 开始时间：10:20
@@ -26,7 +26,7 @@ permalink: /docs/backend/incident-response/
 当前风险：订单占用库存，暂未发现重复扣款
 ```
 
-接口返回 200，只表示它按协议返回了“处理中”。用户仍然没有完成支付。事故严重程度应由交易完成率、受影响用户和资金风险决定，而不是由 500 数量决定。
+[接口返回 200 也可能代表业务失败]({{ site.baseurl }}/docs/interview/backend/performance-production/#business-failure-with-http-success)：它只表示协议返回了“处理中”，用户仍然没有完成支付。事故严重程度应由交易完成率、受影响用户和资金风险决定，而不是由 500 数量决定。
 
 ## 指标先显示范围和变化趋势
 
@@ -42,7 +42,7 @@ permalink: /docs/backend/incident-response/
 系统资源：请求卡在哪个组件
 ```
 
-告警应指向需要采取行动的变化。CPU 短暂升高而用户结果正常，可以观察；支付完成率下降或中间状态最老年龄超过承诺期限，需要立即处理。
+[告警]({{ site.baseurl }}/docs/interview/backend/performance-production/#alert-design)应指向需要采取行动的变化。CPU 短暂升高而用户结果正常，可以观察；支付完成率下降或中间状态最老年龄超过承诺期限，需要立即处理。
 
 ## 日志解释一笔订单发生了什么
 
@@ -60,13 +60,13 @@ permalink: /docs/backend/incident-response/
 }
 ```
 
-稳定字段可以按支付方式、服务版本和错误类别聚合。日志中的“timeout”仍不能证明支付失败，它只说明这次调用没有及时得到结果。
+[结构化日志]({{ site.baseurl }}/docs/interview/backend/performance-production/#structured-logging)中的稳定字段可以按支付方式、服务版本和错误类别聚合。日志中的“timeout”仍不能证明支付失败，它只说明这次调用没有及时得到结果。
 
 访问令牌、银行卡等敏感信息不能为了排查写入日志。订单 ID 和支付请求 ID 足以让有权限的人回到权威系统查询。
 
 ## Trace 找到时间消耗的位置
 
-异常请求的 Trace 显示。Trace 是一次请求跨组件执行形成的分布式调用链：
+异常请求的 [Trace]({{ site.baseurl }}/docs/interview/backend/performance-production/#distributed-tracing) 显示。Trace 是一次请求跨组件执行形成的分布式调用链：
 
 ```text
 POST /orders/O-1042/pay            2.4s
@@ -80,11 +80,11 @@ POST /orders/O-1042/pay            2.4s
 
 对比正常请求和版本信息后，工程师发现新配置把每实例支付并发从 20 提高到 100，连接池仍只有 30。请求开始排队，超时又触发确认查询，确认任务继续争抢同一个连接池，形成自我放大。
 
-指标找到变化范围，日志还原具体结果，Trace 拆开一次调用的时间；版本和配置说明为什么只有部分实例出现异常。三者要围绕同一笔业务关联，而不是分别浏览仪表盘。
+[指标、日志和 Trace]({{ site.baseurl }}/docs/interview/backend/performance-production/#metrics-logs-traces)分别找到变化范围、还原具体结果并拆开一次调用的时间；版本和配置说明为什么只有部分实例出现异常。三者要围绕同一笔业务关联，而不是分别浏览仪表盘。
 
 ## 根因未明时先限制新的影响
 
-连接池正在耗尽，团队没有必要等完整调查报告才行动。先暂停扩大新版本流量，把支付并发恢复到已验证值，限制新的确认查询，并停掉占用同一资源的非核心任务。
+连接池正在耗尽，团队没有必要等完整调查报告才行动。事故发生后应[先限制新影响]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-first-response)：暂停扩大新版本流量，把支付并发恢复到已验证值，限制新的确认查询，并停掉占用同一资源的非核心任务。
 
 页面明确显示支付繁忙，订单和原 `payment_request_id` 被保留。不能为了让积压数字下降，就把 `payment_confirming` 全部标记失败或重新创建支付，那会破坏仍然未知的资金结果。
 
@@ -96,7 +96,7 @@ POST /orders/O-1042/pay            2.4s
 
 团队在少量实例恢复旧并发配置，保持连接池和测试流量不变。连接等待迅速下降，新订单不再大量进入 `payment_confirming`。重新应用高并发配置后问题可复现，假设得到证据支持。
 
-如果同时扩容连接池、修改超时、关闭重试并升级 SDK，即使指标恢复，也不知道哪项真正有效。单一变量的对照能把相关性推进为可重复的因果证据。
+如果同时扩容连接池、修改超时、关闭重试并升级 SDK，即使指标恢复，也不知道哪项真正有效。[单一变量的对照]({{ site.baseurl }}/docs/interview/backend/performance-production/#root-cause-verification)能把相关性推进为可重复的因果证据。
 
 ## 新请求恢复后，还要清理历史状态
 
@@ -106,13 +106,13 @@ POST /orders/O-1042/pay            2.4s
 
 积压不能一次性全量查询，否则会让刚恢复的依赖再次过载。清理速度要低于剩余容量，同时观察新流量和历史任务。
 
-只有新请求尾部延迟恢复、中间状态不再增长、历史积压持续下降、支付完成率回升，并且抽查没有重复扣款，事故才真正结束。底层资源图变绿通常早于用户结果恢复。
+只有新请求尾部延迟恢复、中间状态不再增长、历史积压持续下降、支付完成率回升，并且抽查没有重复扣款，[事故才真正结束]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-business-recovery)。底层资源图变绿通常早于用户结果恢复。
 
 ## 复盘要改变系统的失效方式
 
 这次事故暴露出支付并发与连接池容量没有共同校验，确认查询和创建支付又共享资源。长期修复应让同类错误更难发生、影响更早被发现、恢复更快执行：配置需要版本和灰度，两个路径使用独立预算，中间状态数量和最老年龄触发告警，恢复动作可以被演练。
 
-复盘不是列出“加强监控、谨慎操作”。个人配置错误能够轻易影响全部流量，说明发布和容量边界本身缺少保护。
+[事故复盘]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-postmortem)不是列出“加强监控、谨慎操作”。个人配置错误能够轻易影响全部流量，说明发布和容量边界本身缺少保护。
 
 ## 一次事故的知识骨架
 

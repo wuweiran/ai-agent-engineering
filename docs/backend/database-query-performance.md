@@ -84,7 +84,7 @@ ON orders (buyer_id, status, created_at DESC);
 
 即使定位很快，接口一次读取十万条订单，数据库、网络和应用内存仍要处理十万条结果。查询应该只选择当前页面需要的字段，并使用稳定分页。
 
-[大偏移分页]({{ site.baseurl }}/docs/interview/backend/database/#deep-pagination)常写成：
+[[大偏移分页]({{ site.baseurl }}/docs/interview/backend/api-application/#offset-vs-cursor-pagination)]({{ site.baseurl }}/docs/interview/backend/database/#deep-pagination)常写成：
 
 ```sql
 ORDER BY created_at DESC
