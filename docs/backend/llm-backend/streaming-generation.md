@@ -31,7 +31,7 @@ created_at: 2026-07-14T11:20:00Z
 
 ## SSE 传输有类型的事件
 
-[SSE]({{ site.baseurl }}/docs/interview/ai-agent/#agent-sse-events) 允许服务器在一条 HTTP 连接上持续推送文本事件：
+[SSE]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-sse-events) 允许服务器在一条 HTTP 连接上持续推送文本事件：
 
 ```text
 event: generation.started

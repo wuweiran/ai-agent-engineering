@@ -13,7 +13,7 @@ permalink: /docs/ai-agent/agent-design/state-memory/
 
 恢复时，系统必须知道哪些结论已有证据、哪个查询需要重试，以及之前有没有执行过外部操作。一个月后再出现相似工单，团队又希望 Agent 能参考已经验证的兼容问题，却不能把上次客户的配置和临时猜测一起带进来。
 
-这两个需求分别对应 [Agent 的状态和记忆]({{ site.baseurl }}/docs/interview/ai-agent/#agent-state-and-memory)。**状态服务当前任务，记忆服务未来任务。**
+这两个需求分别对应 [Agent 的状态和记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-state-and-memory)。**状态服务当前任务，记忆服务未来任务。**
 
 ## 四种信息不要混在一起
 
@@ -81,7 +81,22 @@ invalid_when: version >= 4.2.3
 
 错误读取影响一次判断，错误写入会污染很多未来任务。用户明确确认的偏好可以保存；从任务中总结的经验可以先进入待审核区；业务规则和安全要求更适合更新正式知识库。软件升级后，旧问题记忆还要及时失效。
 
-**写入记忆时要说明来源、适用范围和失效条件。**（[Agent 的记忆怎样更新和遗忘？]({{ site.baseurl }}/docs/interview/ai-agent/#memory-update-forgetting)）
+**写入记忆时要说明来源、适用范围和失效条件。**（[Agent 的记忆怎样更新和遗忘？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#memory-update-forgetting)）
+
+## 长期记忆的写入与取回
+
+[长期记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-long-term-memory)不是把完整对话统一转换成向量。它需要写入和取回两条链路：
+
+```text
+写入：任务结果 → 候选记忆 → 验证与去重 → 标注范围和有效期 → 持久存储
+取回：当前目标 → 过滤与检索 → 排序 → 少量相关记忆进入 Context
+```
+
+存储结构应匹配内容。用户偏好、资源 ID 和确定字段适合关系数据库或键值存储，可以按用户和租户精确查询；事故经验和操作说明等非结构化内容可以保存为文档，在规模较大时使用关键词或向量检索。Embedding 与向量数据库适合按语义寻找候选，但它们只是检索方式，不能完成事实验证、权限隔离和失效管理。
+
+取回也不必只发生在任务开始。调查目标和已知条件会在执行中变化，Runtime 可以在当前判断确实需要历史经验时再检索，并把来源和适用范围一起交给模型。
+
+长 Context 能容纳更多当前材料，却仍然受成本、噪声和会话边界限制。分层摘要或递归压缩可以把旧过程整理成较短结论，但这种转换有损。它们负责管理当前 Context，不会自动成为跨会话长期记忆，也不能替代完整记录和权威业务状态。
 
 ## 上下文只取当前需要的部分
 

@@ -13,7 +13,7 @@ permalink: /docs/ai-agent/agent-design/tools/
 
 团队可以给它任意 SQL 和 HTTP 请求能力，但这样很难限制权限；也可以把每个字段都做成工具，结果是模型面对大量相似选项。
 
-应用把工具名称、描述和参数 Schema 提供给模型，模型返回结构化调用请求，Runtime 执行后再把结果送回模型。这个协议通常称为 Tool Calling 或 [Function Calling]({{ site.baseurl }}/docs/interview/ai-agent/#function-calling)。模型只提出调用，不会自己执行真实函数。
+应用把工具名称、描述和参数 Schema 提供给模型，模型返回结构化调用请求，Runtime 执行后再把结果送回模型。这个协议通常称为 Tool Calling 或 [Function Calling]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#function-calling)。模型只提出调用，不会自己执行真实函数。
 
 **工具要把业务动作表达成模型容易选择、程序能够校验的接口。**模型提出意图，软件负责执行，业务服务继续掌握权限和规则。
 
@@ -80,7 +80,9 @@ payment_attempt_count: 2
 
 提示词可以要求模型谨慎操作，不能代替服务端授权。查询订单时要限制租户范围，创建退款申请时要检查坐席权限，真实退款还可能需要金额限制和主管审批。
 
-不同副作用适合不同控制方式：读取订单可以在授权范围内自动执行；创建待审申请可以自动完成并展示内容；真实退款、部署和删除则需要更严格的规则或人工确认（[工具调用失败后怎样设计降级？]({{ site.baseurl }}/docs/interview/ai-agent/#tool-failure-fallback)）。
+网页、文档和工具结果中的文字也可能发动 [Prompt Injection]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#prompt-injection-defense)，诱导模型调用敏感工具。输入过滤只能拦住部分已知模式，真正的安全边界仍是最小工具集合、受限参数、执行时重新鉴权、沙箱和高风险动作确认。外部内容进入 Context 后仍然只是数据，不能提升自身权限。
+
+不同副作用适合不同控制方式：读取订单可以在授权范围内自动执行；创建待审申请可以自动完成并展示内容；真实退款、部署和删除则需要更严格的规则或人工确认（[工具调用失败后怎样设计降级？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#tool-failure-fallback)）。
 
 Claude Code 将文件读取、精确编辑和通用终端分成不同工具，并由宿主执行权限规则。业务 Agent 可以借鉴这种做法，但不需要复制代码 Agent 的工具集合。
 

@@ -11,7 +11,7 @@ permalink: /docs/ai-agent/agent-quality/evaluation/
 
 团队修改了数据生成 Skill。几个熟悉案例仍然成功，但 Agent 的路径会随输入和工具反馈变化：这次一次生成正确，下次可能选错模板或重复上传。
 
-[Agent 评测]({{ site.baseurl }}/docs/interview/ai-agent/#agent-evaluation)要把这种不确定性变成能够重复比较的证据。做法从一条真实任务开始。
+[Agent 评测]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-evaluation)要把这种不确定性变成能够重复比较的证据。做法从一条真实任务开始。
 
 ## 把真实任务保存成样本
 

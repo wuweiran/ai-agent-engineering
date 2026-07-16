@@ -65,4 +65,4 @@ MCP 调用全部返回 200，用户仍可能反复修改生成结果，或在平
 
 值得保留的案例要脱敏，并去除与缺陷无关的偶然细节，形成能够重复运行的最小样本。修复后，原问题通过，完整评测集没有不可接受退化，才完成一次改进。
 
-AI Agent 工程师的日常质量工作，就是反复完成这条链：确认根因，在正确层修改，检查相邻任务和完整回归，逐步发布，再把生产中的新问题带回评测集（[怎样证明一次 Agent 优化真的有效？]({{ site.baseurl }}/docs/interview/ai-agent/#agent-optimization-evidence)）。
+AI Agent 工程师的日常质量工作，就是反复完成这条链：确认根因，在正确层修改，检查相邻任务和完整回归，逐步发布，再把生产中的新问题带回评测集（[怎样证明一次 Agent 优化真的有效？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-optimization-evidence)）。

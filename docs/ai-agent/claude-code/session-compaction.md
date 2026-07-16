@@ -11,7 +11,7 @@ permalink: /docs/ai-agent/claude-code/session-compaction/
 
 Claude Code 已经读取几十个文件、运行多轮测试。终端里还能向上翻到最早的消息，不代表下一次模型调用仍能逐字看到这些内容。模型受 Context Window 限制，Claude Code 还在磁盘上保存完整会话、文件检查点和跨会话记忆。
 
-理解长任务，先要把四种存储分开（[Claude Code 怎样管理当前 Context、会话记录和跨会话记忆？]({{ site.baseurl }}/docs/interview/ai-agent/#claude-code-context-memory)）。
+理解长任务，先要把四种存储分开（[Claude Code 怎样管理当前 Context、会话记录和跨会话记忆？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#claude-code-context-memory)）。
 
 ## 四种信息各自解决什么
 
