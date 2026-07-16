@@ -47,6 +47,8 @@ Context 接近上限时可以摘要旧历史，但摘要有损，容易变化的
 
 重要的是保留来源、适用范围和失效条件。不能把模型猜测自动写成长期事实，也不能让不同用户或租户的记忆相互污染。
 
+相关内容：[Agent 状态与记忆]({{ site.baseurl }}/docs/ai-agent/agent-design/state-memory/)。
+
 ## Claude Code 怎样管理当前 Context、会话记录和跨会话记忆？
 {: #claude-code-context-memory }
 
@@ -56,12 +58,23 @@ Context 接近上限时，Claude Code 会清理旧工具结果并压缩历史，
 
 相关内容：[Claude Code Context 组装]({{ site.baseurl }}/docs/ai-agent/claude-code/context-assembly/)、[Claude Code 长会话]({{ site.baseurl }}/docs/ai-agent/claude-code/session-compaction/)。
 
+## 长对话中怎样保留关键信息？除了向量检索还有什么方法？
+{: #long-context-key-information }
+
+向量检索只负责从外部资料或记忆中找候选，不能单独解决长对话的信息管理。更可靠的设计会把当前目标、已确认事实、约束、待办和资源 ID 保存为结构化任务状态；近期消息保留原文，较早过程压缩成分层或滚动摘要，大型日志和工具结果留在外部系统按需重读，并删除已经过期的 Context。
+
+摘要是有损的，因此金额、审批、工具执行结果等权威事实不能只保存在摘要中。重要目标和约束还应固定在清楚位置，每轮从任务状态重新组装；复杂子任务可以使用独立 Context，只把结论、证据和未知项带回主任务。
+
+相关内容：[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)、[Agent 状态与记忆]({{ site.baseurl }}/docs/ai-agent/agent-design/state-memory/)。
+
 ## Lost in the Middle 是什么？怎样缓解？
 {: #lost-in-the-middle }
 
 模型在长 Context 中可能更容易利用开头和结尾的信息，而忽略中间的关键证据。内容仍在窗口中，不代表会被稳定使用。
 
 可以减少无关材料、通过 Rerank 选出高价值候选，并把重要目标、约束和证据放在清楚位置。位置重排只能缓解问题，不能修复错误检索和过期知识。
+
+相关内容：[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)、[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)。
 
 ## Context 噪声太多时怎样处理？
 {: #context-noise-cleaning }
@@ -71,6 +84,15 @@ Context 接近上限时，Claude Code 会清理旧工具结果并压缩历史，
 同一模型可能重复原误判，因此不能让它自行删除关键反面证据。高风险内容仍需确定性规则、可信来源或独立评审。
 
 相关内容：[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)。
+
+## Agent Context Engineering 有哪些主要技术？管理策略怎样设计？
+{: #agent-context-engineering-strategy }
+
+主要技术可以按 Context 生命周期理解：获取阶段使用 RAG、工具查询和记忆检索；选择阶段做权限与时效过滤、Rerank、去重和相关性判断；组织阶段把系统规则、目标、状态、证据和近期历史按权威性组装；压缩阶段使用滑动窗口、摘要、Context Editing 和工具结果裁剪；隔离阶段让子 Agent 使用独立 Context，只返回结论和证据。稳定前缀还可以使用 Prompt Cache 降低重复计算。
+
+设计时先为当前判断定义所需信息和 Token 预算，再为不同内容指定保留方式：目标、约束和待办进入结构化任务状态，近期对话保留原文，早期过程可以摘要，动态事实重新查询，完整文档和日志留在外部系统。每轮记录来源、版本和组装结果，并通过长任务、冲突资料、过期信息和噪声样本评测任务成功率、关键信息保留、延迟与成本。
+
+相关内容：[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)、[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)。
 
 ## 一次 Agent 调用的 Context 怎样组装？
 {: #agent-context-assembly }
