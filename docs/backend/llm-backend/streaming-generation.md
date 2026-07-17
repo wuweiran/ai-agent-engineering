@@ -11,7 +11,24 @@ permalink: /docs/backend/llm-backend/streaming-generation/
 
 用户打开订单助手，输入：“我买的鞋为什么还没发货？”模型需要读取订单和物流信息，再逐步生成解释。若后端一直等到完整内容产生，用户会在数秒内看不到任何反馈。
 
-[流式返回]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#llm-streaming-purpose)改善了等待体验，也把一次调用变成持续一段时间的状态过程。**流是临时传输过程，持久状态才是系统可以重新确认和恢复的事实。**
+这里涉及两个层级。[Agent Task]({{ site.baseurl }}/docs/backend/llm-backend/agent-task-state/)承载“查明未发货原因并给出解释”这个完整用户目标，内部可能查询订单、调用物流工具，并进行一次或多次模型 Generation。流式生成发生在其中某一次 Generation 内；SSE 既可以传输这次 Generation 的文本片段，也可以传输整个 Task 的工具调用和状态变化。
+
+[流式生成和流式返回]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#streaming-generation-return)是两个相邻但不同的过程：
+
+- **流式生成**：模型自回归地逐步产生 Token，而不是一次计算出完整回答；
+- **流式返回**：应用收到上游生成的文本片段后，不等待完整回答，立即持续传给客户端。
+
+完整链路是：
+
+```text
+模型逐步生成 Token
+→ 模型 API 返回文本片段
+→ 应用后端接收并转发
+→ SSE 等协议推送到客户端
+→ 客户端持续拼接和展示
+```
+
+这种方式让用户更早看到文字和任务进度，降低感知等待时间（[为什么大模型回答通常使用流式返回？]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#llm-streaming-purpose)），但不会缩短模型生成完整回答的时间。它也把一次调用变成持续一段时间的状态过程。**流是临时传输过程，持久状态才是系统可以重新确认和恢复的事实。**
 
 ## 后端先给生成一个稳定身份
 
@@ -31,7 +48,11 @@ created_at: 2026-07-14T11:20:00Z
 
 ## SSE 传输有类型的事件
 
-[SSE]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-sse-events) 允许服务器在一条 HTTP 连接上持续推送文本事件：
+[SSE]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-sse-events)（Server-Sent Events，服务器推送事件）是一种基于普通 HTTP 的单向流式协议。客户端发起请求后，服务器保持连接，并使用 `Content-Type: text/event-stream` 持续返回文本事件；每个事件由字段行组成，事件之间用空行分隔。
+
+浏览器可以使用 `EventSource` 接收 SSE，并在连接中断后自动重连。SSE 只支持服务器向客户端推送，用户提交问题、取消任务等客户端操作仍通过普通 HTTP 请求完成。因此，它适合模型文本和 Agent 进度这类以服务端输出为主的场景。
+
+一次 SSE 响应可以持续发送不同类型的事件：
 
 ```text
 event: generation.started
@@ -63,9 +84,37 @@ Draft：后端已经收到但尚未提交的内容
 Final Message：正常结束并通过检查后的最终结果
 ```
 
-收到模型完成信号后，后端合并片段，检查长度和必要的结构化内容，并把最终消息与 `completed` 状态共同提交。持久化成功后再发送 `message.completed`。
+收到模型完成信号后，后端合并片段，检查长度和必要的结构化内容，再在同一个数据库事务中写入：
 
-如果先通知完成，数据库写入随后失败，用户刷新页面就找不到刚才的回答。完成事件必须指向一个已经能够重新读取的结果。
+```text
+最终消息记录
+├─ message_id
+├─ conversation_id
+├─ generation_id
+├─ 完整回答正文
+├─ 模型与版本
+└─ completed_at
+
+生成记录
+├─ status = completed
+└─ final_message_id = message_id
+```
+
+高频 Token Delta 通常不逐条写入数据库；需要断线恢复时，可以定期保存草稿快照或当前序号。最终消息和完成状态提交成功后，服务端才发送 `message.completed`。
+
+如果先通知完成，随后最终消息或生成状态写入失败，用户刷新页面就找不到刚才的回答，系统也无法确认这次生成是否真正完成。完成事件必须指向一个已经能够通过 `message_id` 或 `generation_id` 重新读取的结果。
+
+这里保存的是**一次模型生成及其消息交付状态**，不等于完整的 [Agent 任务持久状态]({{ site.baseurl }}/docs/backend/llm-backend/agent-task-state/)。简单问答可能只有一次 Generation 和一条最终消息；一项 Agent Task 则可能包含多次模型 Generation、多个 Tool Call、用户确认和等待状态：
+
+```text
+Task T-301
+└─ Run R-1
+   ├─ Step S-1：模型生成 G-1，决定查询订单
+   ├─ Step S-2：执行 Tool Call TC-1
+   └─ Step S-3：模型生成 G-2，产生最终消息 M-302
+```
+
+因此，`message.completed` 只说明一条消息已经保存，不能证明整个 Agent 任务已经完成。Agent 还要检查工具副作用、待确认步骤和任务完成条件，才能提交 `task.completed`。具体实现也可以不单独建立 Generation 表，而是把模型调用记录为一种 Step；关键是只保留一个权威状态来源，避免 Generation 和 Step 各自维护互相冲突的完成状态。
 
 ## 用户取消和连接断开不是一回事
 

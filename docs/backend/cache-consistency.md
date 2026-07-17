@@ -1,12 +1,12 @@
 ---
 layout: default
-title: 缓存一致性与故障保护
+title: 缓存一致性与故障应对
 parent: 后端工程
-nav_order: 7
+nav_order: 8
 permalink: /docs/backend/cache-consistency/
 ---
 
-# 缓存一致性与故障保护
+# 缓存一致性与故障应对
 
 运动鞋进入促销页面后，商品详情读取量迅速上升。团队把组装结果放进 Redis，页面延迟明显下降。与此同时，`SKU-8812` 的库存已经归零，部分用户仍然看到“有货”。
 

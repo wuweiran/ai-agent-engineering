@@ -1,20 +1,24 @@
 ---
 layout: default
-title: 可观测性与事故处理
+title: 监控与故障处理
 parent: 后端工程
-nav_order: 9
+nav_order: 10
 permalink: /docs/backend/incident-response/
 ---
 
-# 可观测性与事故处理
+# 监控与故障处理
+
+线上运行可以分成三个环节：**监控**持续观察业务和系统指标并触发告警；**问题排查**使用指标、日志和 Trace 缩小范围、定位原因；**故障处理**还包括止损、恢复、历史状态清理和复盘。
+
+可观测性是支撑排查的系统能力，强调能否根据外部输出解释内部状态。它通常由指标、日志和 Trace 组成，不等同于监控，也不是故障处理的完整流程。
 
 运动鞋促销开始二十分钟后，客服收到反馈：订单已经创建，支付页面却长时间显示“正在确认”。HTTP 成功率仍然正常，支付服务的平均延迟也没有明显变化。
 
 值班工程师发现，处于 `payment_confirming` 的订单持续增加，少数支付请求需要十几秒。最终原因不是支付服务处理变慢，而是新配置允许过多并发请求争抢订单服务的支付连接池。
 
-以下是一个模拟事故。它说明生产排查不能从某张 CPU 图开始，而要从用户未完成的业务结果出发，再用指标、日志和 Trace 找到第一个异常位置。
+以下是一个模拟故障。处理从用户未完成的业务结果出发，再用指标、日志和 Trace 找到第一个异常位置。
 
-## HTTP 200 也可能代表用户失败
+## 用户结果与影响范围
 
 “支付系统有问题”还不能指导行动。值班工程师先[确定影响范围]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-impact-scope)，把影响描述成可以验证的事实：
 
@@ -28,7 +32,7 @@ permalink: /docs/backend/incident-response/
 
 [接口返回 200 也可能代表业务失败]({{ site.baseurl }}/docs/interview/backend/performance-production/#business-failure-with-http-success)：它只表示协议返回了“处理中”，用户仍然没有完成支付。事故严重程度应由交易完成率、受影响用户和资金风险决定，而不是由 500 数量决定。
 
-## 指标先显示范围和变化趋势
+## 业务指标、状态指标与系统指标
 
 支付完成率从 82% 降到 61%，`payment_confirming` 数量持续增长，最老订单等待时间不断增加。这些指标说明问题正在影响哪段业务。
 
@@ -44,7 +48,23 @@ permalink: /docs/backend/incident-response/
 
 [告警]({{ site.baseurl }}/docs/interview/backend/performance-production/#alert-design)应指向需要采取行动的变化。CPU 短暂升高而用户结果正常，可以观察；支付完成率下降或中间状态最老年龄超过承诺期限，需要立即处理。
 
-## 日志解释一笔订单发生了什么
+## 资源饱和的定位方法
+
+CPU、内存和磁盘告警都只说明某项资源异常，排查顺序仍然是：先确认用户影响和异常开始时间，再定位节点、容器和进程，最后进入线程、对象或文件等具体现场。
+
+| 资源 | 先区分什么 | 继续定位什么 |
+| --- | --- | --- |
+| CPU | 用户态、系统态还是 I/O Wait；单核还是整体 | 高 CPU 进程、线程以及调用栈或性能剖析 |
+| 内存 | 进程内存还是文件缓存；持续增长还是流量峰值 | Java 堆、直接内存、Metaspace、线程栈或本地进程内存 |
+| 磁盘 | 磁盘空间、inode 用尽还是 I/O 饱和 | 大目录、已删除仍被占用的文件、读写进程、设备延迟与队列 |
+
+常见命令只是取得证据的入口：`top`、`pidstat` 查看进程与线程；`free`、`vmstat` 查看内存和换页；`df`、`du`、`lsof` 查看空间；`iostat` 查看磁盘吞吐、延迟和队列。容器环境还要同时检查容器 Limit 与宿主机资源。
+
+资源恢复后仍要回到业务指标确认用户结果，并结合发布、配置和流量变化验证根因。CPU 很高不一定要直接扩容，内存很高不一定是泄漏，磁盘告警也要先区分空间不足和 I/O 变慢。
+
+相关问题：[CPU 占用过高怎样排查？]({{ site.baseurl }}/docs/interview/backend/performance-production/#high-cpu-troubleshooting)、[内存占用过高怎样排查？]({{ site.baseurl }}/docs/interview/backend/performance-production/#high-memory-troubleshooting)、[磁盘异常怎样排查？]({{ site.baseurl }}/docs/interview/backend/performance-production/#high-disk-troubleshooting)。
+
+## 结构化日志还原单笔业务
 
 工程师从受影响订单中选择 `O-1042`，按稳定标识查到结构化日志：
 
@@ -64,7 +84,7 @@ permalink: /docs/backend/incident-response/
 
 访问令牌、银行卡等敏感信息不能为了排查写入日志。订单 ID 和支付请求 ID 足以让有权限的人回到权威系统查询。
 
-## Trace 找到时间消耗的位置
+## Trace 定位跨组件耗时
 
 异常请求的 [Trace]({{ site.baseurl }}/docs/interview/backend/performance-production/#distributed-tracing) 显示。Trace 是一次请求跨组件执行形成的分布式调用链：
 
@@ -82,7 +102,7 @@ POST /orders/O-1042/pay            2.4s
 
 [指标、日志和 Trace]({{ site.baseurl }}/docs/interview/backend/performance-production/#metrics-logs-traces)分别找到变化范围、还原具体结果并拆开一次调用的时间；版本和配置说明为什么只有部分实例出现异常。三者要围绕同一笔业务关联，而不是分别浏览仪表盘。
 
-## 根因未明时先限制新的影响
+## 故障止损
 
 连接池正在耗尽，团队没有必要等完整调查报告才行动。事故发生后应[先限制新影响]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-first-response)：暂停扩大新版本流量，把支付并发恢复到已验证值，限制新的确认查询，并停掉占用同一资源的非核心任务。
 
@@ -92,13 +112,13 @@ POST /orders/O-1042/pay            2.4s
 
 **事故处理先停止影响扩大，再在稳定环境中确认根因。**
 
-## 用对照验证根因，而不是同时修改一切
+## 根因验证
 
 团队在少量实例恢复旧并发配置，保持连接池和测试流量不变。连接等待迅速下降，新订单不再大量进入 `payment_confirming`。重新应用高并发配置后问题可复现，假设得到证据支持。
 
 如果同时扩容连接池、修改超时、关闭重试并升级 SDK，即使指标恢复，也不知道哪项真正有效。[单一变量的对照]({{ site.baseurl }}/docs/interview/backend/performance-production/#root-cause-verification)能把相关性推进为可重复的因果证据。
 
-## 新请求恢复后，还要清理历史状态
+## 流量恢复与历史状态清理
 
 回滚配置只阻止新问题继续发生。事故期间已经积累的订单可能有三种真实结果：支付单已经创建、明确没有创建、仍然无法确认。
 
@@ -108,13 +128,13 @@ POST /orders/O-1042/pay            2.4s
 
 只有新请求尾部延迟恢复、中间状态不再增长、历史积压持续下降、支付完成率回升，并且抽查没有重复扣款，[事故才真正结束]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-business-recovery)。底层资源图变绿通常早于用户结果恢复。
 
-## 复盘要改变系统的失效方式
+## 故障复盘与系统改进
 
 这次事故暴露出支付并发与连接池容量没有共同校验，确认查询和创建支付又共享资源。长期修复应让同类错误更难发生、影响更早被发现、恢复更快执行：配置需要版本和灰度，两个路径使用独立预算，中间状态数量和最老年龄触发告警，恢复动作可以被演练。
 
 [事故复盘]({{ site.baseurl }}/docs/interview/backend/performance-production/#incident-postmortem)不是列出“加强监控、谨慎操作”。个人配置错误能够轻易影响全部流量，说明发布和容量边界本身缺少保护。
 
-## 一次事故的知识骨架
+## 线上故障处理流程
 
 事故处理沿着业务因果链推进：
 
