@@ -33,7 +33,25 @@ Outlook Copilot 复杂指令
 
 主要工作包括 Agent Mode 的任务路由、Context、工具契约、Planning、用户确认和执行控制。复杂任务还需要限制搜索范围、工具轮次、Token 和任务时间，并处理部分成功、资源已经变化和重复操作。
 
-这个项目能够承载生产级 Agent Runtime 的主要知识：ReAct、Planning、工具发现、Task/Run/Step/Tool Call、结果未知、幂等、恢复、事件进度、Trace、灰度和线上指标。所有这些能力都服务 Outlook Copilot 中的真实任务，而不是脱离产品建设通用演示平台。
+## 这个项目可以深入到哪里
+
+- 普通 Copilot 问答与 Agent Mode 复杂任务怎样路由；
+- ReAct、Planning 和 Replanning 怎样配合；
+- 工具搜索、工具集合控制和工具选择评测；
+- 多轮 Context 的保留、压缩和重建；
+- Task、Run、Step 和 Tool Call 怎样保存任务事实；
+- 完成、等待、失败和结果未知分别怎样处理；
+- 轮次、Token、时间、成本和工具预算；
+- 重复工具调用与连续无进展怎样检测；
+- 用户确认为什么要绑定具体计划版本；
+- 幂等、资源版本、批量操作和部分成功；
+- Worker 重启后的任务恢复与长任务生命周期；
+- SSE 或任务事件怎样向 Copilot 展示进度；
+- Trace、线上指标、灰度、停止条件和回滚；
+- 外部邮件与附件中的 Prompt Injection；
+- 越权、错误写入和数据外传怎样由确定性软件阻止。
+
+这个项目可以成为完整的生产级 Agent Runtime 经历。重点不是搭建一个脱离产品的通用演示平台，而是把 Context、规划、工具、状态、安全、评测和生产运行放进 Outlook Copilot 的真实任务中。
 
 ## 后续可以展开的文档
 
