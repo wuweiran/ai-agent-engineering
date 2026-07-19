@@ -60,6 +60,19 @@ permalink: /docs/interview/ai-agent/llm/
 
 相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)、[Agent Context]({{ site.baseurl }}/docs/ai-agent/agent-design/context/)。
 
+## Prompt、RAG 和微调应该怎样选择？
+{: #prompt-rag-fine-tuning-selection }
+
+按问题根因选择：
+
+- **Prompt**：模型没有正确理解任务、边界或输出要求；
+- **RAG**：缺少外部知识，或者知识需要及时更新、保留来源和权限；
+- **微调**：希望模型在大量同类任务中稳定形成特定行为，而且 Prompt、Context、工具和确定性规则仍不能可靠解决。
+
+三者可以组合使用。RAG 不会自动修复指令不清，微调也不适合注入实时事实；权限和业务规则始终由程序执行。通常先尝试成本更低、更新更容易的 Prompt 和 RAG，再根据代表性评测决定是否微调。
+
+相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)、[RAG 与知识检索]({{ site.baseurl }}/docs/llm/rag/)、[Token、Attention 与生成]({{ site.baseurl }}/docs/llm/model-inference/)。
+
 ## 怎样设计和优化 Prompt？
 {: #prompt-optimization }
 

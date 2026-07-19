@@ -90,6 +90,19 @@ Agent 的基本架构包括：
 
 相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)、[Agent Planning]({{ site.baseurl }}/docs/ai-agent/agent-design/planning/)。
 
+## 用户意图模糊或信息不足时，Agent 怎样处理？
+{: #agent-intent-ambiguity }
+
+**存在多个合理解释，或者缺少执行所需的信息时，应先澄清，不能猜测后执行高风险动作。**
+
+1. **判断缺口**：根据当前任务、工具 Schema 和业务规则，识别缺失字段、冲突信息或多个候选意图；
+2. **最小追问**：只询问会改变后续路径的关键信息，并保留已经确认的事实；
+3. **按风险处理**：低风险回答可以说明假设后继续；支付、退款和数据修改必须得到明确确认，并由服务端重新校验。
+
+连续澄清仍无法推进时，应停止当前动作或转人工。高频且能够稳定枚举的意图适合由程序路由，模型主要处理开放表达和长尾判断。
+
+相关内容：[模型、程序与人的决策边界]({{ site.baseurl }}/docs/ai-agent/agent-design/decision-boundary/)、[Agent 执行与终止]({{ site.baseurl }}/docs/ai-agent/agent-design/execution-control/)。
+
 ## Agent 出现死循环怎么办？异常处理机制怎样设计？
 {: #agent-loop-exception-handling }
 
@@ -115,6 +128,20 @@ Agent 的基本架构包括：
 参数校验、权限、审批、幂等和真实执行都发生在模型之外。
 
 相关内容：[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)。
+
+## 怎样设计 Agent 的工具调用能力？
+{: #agent-tool-calling-design }
+
+**模型只负责提出调用，Runtime 负责安全执行并确认结果。**技术方案主要包含四部分：
+
+1. **工具契约**：围绕稳定业务动作设计名称、描述、参数 Schema 和返回状态；读取、资格判断和真实写入通常分开；
+2. **工具选择**：只暴露当前任务和权限范围内的能力；工具很多时先检索候选，再加载完整 Schema；
+3. **执行边界**：Runtime 校验参数、身份、权限、审批和业务状态，再调用真实服务并返回 Tool Result；
+4. **可靠性**：写操作使用幂等键和状态查询，超时区分失败与结果未知，并用 Trace 记录完整调用链。
+
+实现时可以基于模型原生 Tool Calling 自建循环，也可以使用 Agent SDK 复用循环、状态和观测能力；MCP 用于标准化接入外部能力。框架选型主要看权限、恢复、审批、Trace、部署环境和维护成本。
+
+相关内容：[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)、[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
 
 ## Function Calling、MCP、A2A 和 Skill 有什么区别？
 {: #function-calling-mcp-a2a-skill }
@@ -144,11 +171,11 @@ Agent 的基本架构包括：
 ## MCP、A2A 和 ACP 分别解决什么问题？
 {: #mcp-a2a-acp }
 
-- **MCP**：连接模型应用与工具和数据；
-- **A2A**：连接不同 Agent，交换任务、消息、状态和产物；
+- **MCP**：让模型应用通过统一的客户端—服务器协议接入工具、资源和提示模板，减少每个 Runtime 分别适配外部能力的成本；
+- **A2A**：让具有独立身份和生命周期的 Agent 发现能力，并交换任务、消息、状态和产物，适合跨产品或跨团队协作；
 - **ACP**：连接代码编辑器等客户端与编码 Agent。
 
-三者位于不同边界，不能互相替代。具体实现和版本应以各自规范为准。参考：[MCP](https://modelcontextprotocol.io/docs/learn/server-concepts)、[A2A](https://a2a-protocol.org/latest/specification/)、[ACP](https://agentclientprotocol.com/)。
+可以记成：**MCP 连接 Agent 与能力，A2A 连接 Agent 与 Agent，ACP 连接交互客户端与编码 Agent。**协议只统一通信契约，不会自动解决鉴权、任务状态、幂等和故障恢复。具体实现和版本应以各自规范为准。参考：[MCP](https://modelcontextprotocol.io/docs/learn/server-concepts)、[A2A](https://a2a-protocol.org/latest/specification/)、[ACP](https://agentclientprotocol.com/)。
 
 相关内容：[多 Agent 协作]({{ site.baseurl }}/docs/ai-agent/agent-design/multi-agent/)、[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
 
