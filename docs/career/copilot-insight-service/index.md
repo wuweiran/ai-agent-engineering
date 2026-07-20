@@ -17,7 +17,7 @@ permalink: /docs/career/copilot-insight-service/
 
 ## 系统处在什么位置
 
-上游是 Outlook Copilot Runtime。Runtime 将 Insight Service 的能力注册为邮件查询、Conversation Context 和 Calendar Context 三个高层工具。模型生成 Tool Call 后，Runtime 代表用户执行调用并附带访问令牌与 Outlook 界面 Context。模型直接提供绝对时间和稳定 Person ID，Insight Service 校验这些参数，访问邮件和日历，完成权限过滤、排序、去重和压缩后返回模型。
+上游是 Outlook Copilot Runtime。Runtime 将 Insight Service 的能力注册为邮件查询、Conversation Context 和 Calendar Context 三个 Extension；每个 Extension 以 Tool Schema 暴露给模型，并由 Handler 映射到 Insight Service API。模型生成 Tool Call 后，Runtime 代表用户执行调用并附带访问令牌与 Outlook 界面 Context。模型直接提供绝对时间和稳定 Person ID，Insight Service 校验这些参数，访问邮件和日历，完成权限过滤、排序、去重和压缩后返回模型。
 
 ```text
 Outlook Copilot 请求
@@ -38,7 +38,7 @@ Outlook Copilot 请求
 
 团队共同维护 Insight Service 的邮件 Query、Conversation 和 Calendar Context。我的核心职责是 **`/insights/query` 的邮件检索链路**：将模型传入的 Query、绝对时间、稳定 Person ID 和当前邮件 Anchor 转成 Outlook Search 请求，完成分页召回、对象级权限过滤、Message 与 Conversation 去重、多特征打分和 Top-K 排序，最后返回 Message ID、Conversation ID、Snippet 和 Citation。
 
-Conversation 与 Calendar Context 由团队其他成员负责。我参与 `search_outlook_context` 的工具和 HTTP 契约，以及邮件对象级权限接入；Query 返回 Conversation ID 后，模型可以调用团队提供的 Conversation 工具继续取得线程证据。
+Conversation 与 Calendar Context 由团队其他成员负责。我参与 `search_outlook_context` Extension 和 HTTP 契约，以及邮件对象级权限接入；Query 返回 Conversation ID 后，模型可以通过团队提供的 Conversation Extension 继续取得线程证据。
 
 这条工作的重点是**在海量且持续变化的邮箱数据中，以有界延迟和内存找到足够回答问题的候选证据，同时保证对象级权限、结果时效和 Citation**。
 
@@ -66,11 +66,11 @@ Conversation 与 Calendar Context 由团队其他成员负责。我参与 `searc
 - **返回与协作**：为什么 Query 只返回 Message ID、Conversation ID、Snippet 和 Citation，以及模型何时继续读取邮件或 Conversation；
 - **RAG 评测**：怎样评估 Recall@K、排序质量、权限泄露、Citation、P95/P99、下游请求量和 Token 成本。
 
-Insight Service 同时属于大模型应用后端和 Agent 工具后端：它把实时、受权限控制的 Outlook 数据转换成模型可使用的 Tool Result，Runtime 再将结果放入模型 Context。
+Insight Service 同时属于大模型应用后端和 Agent 工具后端：它为以 Extension 形式注册的 Insight 工具提供后端实现，把实时、受权限控制的 Outlook 数据转换成 Tool Result，Runtime 再将结果放入模型 Context。
 
 ## 项目文档
 
-- [接口与 Context 请求]({{ site.baseurl }}/docs/career/copilot-insight-service/context-api/)：邮件 Query、Conversation、Calendar 工具及各自的请求和返回结构；
+- [接口与 Context 请求]({{ site.baseurl }}/docs/career/copilot-insight-service/context-api/)：邮件 Query、Conversation、Calendar Extension 及各自的请求和返回结构；
 - [Outlook 邮件 RAG]({{ site.baseurl }}/docs/career/copilot-insight-service/mail-rag/)：分页召回、有界 Top-K、候选存储和 Conversation 二阶段检索；
 - [Query 性能与缓存]({{ site.baseurl }}/docs/career/copilot-insight-service/performance/)：延迟拆分、提前停止、连接池、限流、OBO Token Cache 和缓存边界；
 - [Query 评测与发布]({{ site.baseurl }}/docs/career/copilot-insight-service/evaluation/)：Recall@12、MRR、NDCG、权限泄露、Citation、P95/P99 和发布门槛；

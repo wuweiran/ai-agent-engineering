@@ -11,55 +11,51 @@ permalink: /docs/career/copilot-capabilities/
 
 ## 项目是什么
 
-在已有 Outlook Copilot Agent 中增加划词解释、附件总结和邮箱整理等任务能力。它们不是三个彼此独立的模型服务，而是同一个 Agent 在不同界面 Context 下采用的执行路径。
+Outlook Copilot 是运行在 Side Panel 中的通用 Agent，基于 Microsoft 365 Copilot 的 **Declarative Agent** 平台实现。我在同一个 Agent 中增加划词解释、附件总结和邮箱整理等任务能力，不分别建设 Agent 或模型服务。
 
-客户端会把正在阅读的邮件、选中的文字、点击的附件或当前文件夹交给 Copilot。Agent 根据用户目标和这些 Context，选择 Insight Service、附件读取或 Outlook 邮件工具完成任务。
+客户端把正在阅读的邮件、选中文字、附件或当前文件夹交给 Copilot。Declarative Agent 平台根据入口加载 Agent Instructions、场景 Context 和可用 Extension：划词解释走固定 Prompt，附件总结走固定工具链路，开放问答和复杂任务则由模型根据 Tool Result 动态决定继续检索、读取、澄清或提出动作。
 
 ## 系统处在什么位置
 
-上游是 Outlook 客户端和 Copilot Orchestrator。下游复用 Insight Service、附件内容提取、邮件搜索以及 Exchange Online 的邮件读写接口。
+上游是 Outlook 客户端和 Microsoft 365 Copilot Declarative Agent 平台。下游是已有的 Insight、附件提取和 Outlook 邮件读写 Extension。
 
 ```text
-用户在 Outlook 中请求 Copilot
-→ 客户端提供当前界面 Context
-→ Copilot Agent 理解目标并选择工具
-→ Insight Service、附件工具或 Outlook 邮件工具
-→ Tool Result 返回 Agent
+用户在 Outlook Side Panel 请求 Copilot
+→ 客户端提供界面 Context
+→ Declarative Agent 加载 Instructions、Context 和 Extension
+→ 模型理解目标并生成 Tool Call
+→ Copilot 平台调用已有 Extension
+→ Tool Result 返回模型
 → Outlook 展示回答或待确认动作
 ```
 
-## 三类能力
+## 业务场景
 
-**划词解释**主要解决界面 Context。Agent 不仅需要选中文字，还需要有限前后文、邮件主题和语言，才能解释缩写与指代。
-
-**附件总结**需要 Agent 确认目标附件，调用内容提取工具，再处理短文档、长文档、OCR、格式不支持和引用等情况。
-
-**邮箱整理**开始涉及业务动作。Agent 搜索并分类邮件，生成移动、归档或加旗标计划；写操作在用户看到受影响范围并确认后才执行。
+划词解释、附件总结和邮箱整理复用同一个 Copilot Agent，只是在执行形态、Context、工具和风险上不同。划词解释使用选区和固定 Prompt；附件总结按固定链路提取内容并生成总结；邮箱整理根据搜索和读取结果形成动作计划，并在移动、归档或加旗标前取得用户确认。通用 Agent 可以同时包含这些固定快速路径和模型驱动的动态工具路径。
 
 ## 主要工作
 
-主要工作是设计能力说明、Context 装配、工具 Schema、Tool Result 和确认边界。不同能力需要不同的信息与工具，不能只靠一个不断增长的 Prompt 处理全部场景。
+主要工作围绕 Declarative Agent 的横向能力展开：Agent Instructions、界面 Context 装配、Extension 选择与参数使用、Tool Result 处理、读写边界和用户确认。不同场景复用同一个 Copilot 平台，但按任务需要加载不同 Context 与已有工具。
 
 ## 这个项目可以深入到哪里
 
-- 当前邮件、选区、附件和文件夹等界面 Context 怎样进入 Agent；
-- Function Calling、Tool Result 与模型的后续判断；
-- 工具名称、描述和 Schema 怎样影响工具选择；
-- 工具参数校验与服务端业务校验的区别；
-- 读工具与写工具怎样划分；
-- 邮件、附件和文件夹的对象级授权；
-- 写操作怎样展示参数并取得用户确认；
-- 工具超时、错误语义、降级和部分失败；
-- 附件和邮件正文作为不可信内容带来的 Prompt Injection；
-- 为什么划词解释、附件总结和邮箱整理需要不同的 Context 与执行路径。
+- **Declarative Agent 接入**：Agent Definition、平台模型循环、Tool Call 和 Tool Result 怎样衔接；
+- **Prompt Engineering**：System Prompt、能力说明和场景约束怎样让模型理解任务边界；
+- **Context Engineering**：当前邮件、选区、附件和文件夹怎样按任务进入 Context，并控制 Token 与噪声；
+- **工具设计**：名称、描述和 Schema 怎样影响模型选择，读取、提取和写入工具怎样划分；
+- **执行控制**：参数校验、超时、错误语义、降级、幂等和部分失败怎样处理；
+- **安全与确认**：对象级权限、Prompt Injection、资源版本和写操作确认怎样由程序保证；
+- **版本与发布**：Agent Definition、Instructions、Context 和 Extension 引用怎样灰度、观测和回滚；
+- **生产运行**：模型和工具的延迟、Token、成本、容量、监控和值班事故。
 
-这里最大的深度不是调用了几次模型，而是：**怎样把邮件和附件这类真实业务对象安全地暴露给 Agent。**
+每个主题都可以用三个业务场景说明差异。例如 Context Engineering 中比较选区、附件和文件夹 Context；工具设计中比较 Insight 查询、附件提取和邮件写入工具；安全与确认中说明只读解释、内容读取和批量写操作为何采用不同边界。
 
-## 后续可以展开的文档
+这里最大的深度不是调用了几次模型，而是：**怎样把邮件和附件这类真实业务对象安全地暴露给 Agent，并让模型判断稳定地落到可验证、可确认和可恢复的执行链路。**
 
-- Agent 能力接入：Copilot Orchestrator、能力注册、Context 和工具循环；
-- 划词解释：选区 Context、流式结果、语言和受保护内容；
-- 附件总结：内容提取、分段、引用、OCR 和错误契约；
-- 邮箱整理：搜索、分类、动作计划、确认和批量执行；
-- 工具安全：权限、资源版本、幂等和 Prompt Injection；
-- 部署与生产运行：模型网关、服务资源、容量、延迟、灰度和值班。
+## 项目文档
+
+- [Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/)：Agent Definition、Extension、平台模型循环、Tool Call、Tool Result、用户确认和终止；
+- [Prompt 与 Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/)：分层 Prompt、界面 Context、Token 预算、工具描述、版本和失败归因；
+- [工具设计与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)：Extension、错误语义、超时、Operation ID、幂等、资源版本和部分失败；
+- [权限与用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/)：工具 Scope、对象级授权、Risk Policy、计划确认和 Prompt Injection；
+- [发布与生产运行]({{ site.baseurl }}/docs/career/copilot-capabilities/production/)：版本清单、配置校验、质量门禁、Ring 灰度、Trace、指标和回滚。

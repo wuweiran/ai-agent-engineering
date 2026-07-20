@@ -32,15 +32,15 @@ permalink: /docs/career/
 
 ## 2025.06—至今　[Copilot Evaluation 与 Golden Set]({{ site.baseurl }}/docs/career/copilot-evaluation/)
 
-2025 年 6 月开始参与建立 Golden Set 和回归评测流程，最初与 Copilot Agent 功能开发并行，2025 年 10 月后成为主要工作。评测使用固定邮箱、附件和用户任务比较不同模型、Prompt、Context 与工具版本。
+2025 年 6 月开始参与建设 Golden Set 和回归评测流程，最初与 Copilot Agent 功能开发并行，2025 年 10 月后成为主要工作。所有 Evaluation Job 都运行在统一评测中台 SEVAL；平台承担 Job 管理，我主要维护由 CIQ 与 Utterance 组成的 Golden Set Query，以及对应的邮件 Grounding Data 和 Assertion。
 
-评测同时检查回答质量、事实完整性、引用、工具与动作是否正确，以及延迟和成本。确定性结果由程序检查，开放语义使用模型评分和人工抽查。
+这套数据最初由各功能开发者分散添加，后来集中维护以复用不断增长的邮件集合；再通过内部 LLM 平台以 eyes-off 方式脱敏真实用户 Utterance，并优先复用能关联较多 Query 的热点 Email，改善开发者构造样例无法反映真实输入分布的问题。Agent 结果通过 LM Checklist 和邮件业务 Metric 评分。
 
 ## 2026.03—至今　[Copilot Bake-off]({{ site.baseurl }}/docs/career/copilot-bakeoff/)
 
-2026 年 3 月开始参与建设 Bake-off 评测框架，作为 Copilot Evaluation 主线下的专项对比工作，评估 Outlook Copilot 与 Gmail Gemini 在邮件问答、附件总结、信息查找和邮箱整理等相近任务上的表现。
+2026 年 3 月开始参与 Copilot Bake-off，作为 Copilot Evaluation 主线下的专项对比工作。核心实现是使用 Playwright 操作 Gmail Gemini 页面并采集 Response，内部称为 scraping；同时把 Outlook Grounding Data 导入 Google Workspace，维护 User、Email 和 Golden Set Mapping。
 
-框架负责准备可比较的测试邮箱和任务，通过两侧适配器执行，并统一保存输出、引用、交互轮次、耗时和失败原因，再使用盲评规则生成对比结果。
+Bake-off 先按标签从 Outlook Golden Set 中裁剪出双方都有对应功能的 Query；Gmail Gemini 不支持的功能不执行，也不记为失败。Golden Set 裁剪、数据 ingestion、mapping、两侧执行、scraping 和 Response 配对全部由 Outlook Team 搭建的系统完成。两侧有效 Response 准备好后才提交到 SEVAL 运行 LM Checklist，评分返回后再由 Bake-off 系统生成 Query 级对比。
 
 ## 时间线中的工作变化
 
