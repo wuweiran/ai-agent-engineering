@@ -11,7 +11,7 @@ permalink: /docs/career/copilot-bakeoff/
 
 ## 项目是什么
 
-参与建设 Bake-off 评测框架，对比 Outlook Copilot 与 Gmail Gemini 在相近邮件任务上的表现。目标不是给两个模型做简单排名，而是比较完整产品在邮件问答、附件总结、信息查找和邮箱整理中的任务完成质量。
+2026 年 3 月开始参与建设 Bake-off 评测框架，作为 Copilot Evaluation 主线下的专项对比工作，评估 Outlook Copilot 与 Gmail Gemini 在相近邮件任务上的表现。目标不是给两个模型做简单排名，而是比较完整产品在邮件问答、附件总结、信息查找和邮箱整理中的任务完成质量。
 
 最终结果同时受到模型、产品 Context、搜索、工具和交互方式影响，因此框架评测的是产品能力，不把差异全部归因于底层模型。
 

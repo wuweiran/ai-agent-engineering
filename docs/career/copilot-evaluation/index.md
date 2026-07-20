@@ -11,7 +11,7 @@ permalink: /docs/career/copilot-evaluation/
 
 ## 项目是什么
 
-与 Copilot 功能开发并行，参与建立 Golden Set 和回归评测流程。模型、Prompt、Context、内容提取和工具版本都会影响结果，开发人员手工试几个邮箱无法判断一次修改是否真正改善。
+2025 年 6 月开始参与建立 Golden Set 和回归评测流程，最初与 Copilot Agent 功能开发并行，2025 年 10 月后成为主要工作。模型、Prompt、Context、内容提取和工具版本都会影响结果，开发人员手工试几个邮箱无法判断一次修改是否真正改善。
 
 这个项目把真实用户任务保存成可重复运行的样本，并比较不同 Copilot 版本在回答、引用、工具和动作上的变化。
 
