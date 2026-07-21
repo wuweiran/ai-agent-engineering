@@ -14,7 +14,7 @@ permalink: /docs/llm/
 
 ## 模型生成链路
 
-[Token、Attention 与生成](model-inference/)从 Token、Embedding、Attention 和训练过程建立最小认识。理解这些机制不是为了推导完整数学公式，而是为了判断 Context Window、Token 成本、语义检索和模型能力的边界。
+[Token、Attention 与生成](model-inference/)从 Token、Embedding、Attention 和训练过程建立最小认识，并说明 vLLM 一类生产推理引擎与 Ollama 一类本地模型运行工具处在系统什么位置。理解这些机制不是为了推导完整数学公式，而是为了判断 Context Window、Token 成本、语义检索、模型能力和推理服务的边界。
 
 ## Prompt 与结构化输出
 

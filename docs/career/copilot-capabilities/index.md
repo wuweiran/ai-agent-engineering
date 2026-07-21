@@ -11,57 +11,54 @@ permalink: /docs/career/copilot-capabilities/
 
 ## 项目是什么
 
-Outlook Copilot 是运行在 Side Panel 中的通用 Agent，基于 Microsoft 365 Copilot 的 **Declarative Agent** 平台实现。我在同一个 Agent 中增加划词解释、附件总结和邮箱整理等任务能力，不分别建设 Agent 或模型服务。
+Outlook Copilot 是运行在 Side Panel 中的通用 Agent，基于 Microsoft 365 Copilot 的 Declarative Agent 平台实现。我在同一个 Agent 中交付了划词解释、附件总结和邮箱整理三项能力，没有为每项能力分别建设 Agent 或模型服务。
 
-客户端把正在阅读的邮件、选中文字、附件或当前文件夹交给 Copilot。Declarative Agent 平台根据入口加载 Agent Instructions、场景 Context 和可用 Extension：划词解释走固定 Prompt，附件总结走固定工具链路，开放问答和复杂任务则由模型根据 Tool Result 动态决定继续检索、读取、澄清或提出动作。
-
-## 系统处在什么位置
-
-上游是 Outlook 客户端和 Microsoft 365 Copilot Declarative Agent 平台。下游是已有的 Insight、附件提取和 Outlook 邮件读写 Extension。
+客户端提供当前邮件、选区、附件或文件夹等界面信息。平台加载 Agent Instructions 和当前场景允许的 Extension，再由模型直接回答或发起 Tool Call。附件提取、邮件搜索和邮件写入均由已有 Extension 完成。
 
 ```text
-用户在 Outlook Side Panel 请求 Copilot
-→ 客户端提供界面 Context
-→ Declarative Agent 加载 Instructions、Context 和 Extension
-→ 模型理解目标并生成 Tool Call
-→ Copilot 平台调用已有 Extension
-→ Tool Result 返回模型
-→ Outlook 展示回答或待确认动作
+Outlook Side Panel
+→ Agent Instructions 与当前场景 Context
+→ Microsoft 365 Copilot 平台
+→ 已有 Extension
+→ 回答或邮件操作结果
 ```
-
-## 业务场景
-
-划词解释、附件总结和邮箱整理复用同一个 Copilot Agent，只是在执行形态、Context、工具和风险上不同。划词解释使用选区和固定 Prompt；附件总结按固定链路提取内容并生成总结；邮箱整理根据搜索和读取结果形成动作计划，并在移动、归档或加旗标前取得用户确认。通用 Agent 可以同时包含这些固定快速路径和模型驱动的动态工具路径。
 
 ## 主要工作
 
-主要工作是在统一 Declarative Agent 中落地三类执行形态，并让开放模型判断受到业务 Context、工具契约和确定性安全边界约束：
+我负责三项能力的 Agent Definition、场景 Prompt、Side Panel Context 和 Extension 接入，定义模型什么时候直接回答、什么时候调用搜索或读取工具，以及不同 Tool Result 返回后怎样继续。功能上线前使用 Trace 排查问题，并通过 Golden Set 回归和 Ring 灰度发布。
 
-- 为显式入口和自然语言请求设计能力路由与工具白名单；
-- 设计当前邮件、选区、附件、Folder 和多轮任务状态的 Context 生命周期；
-- 让邮箱整理通过搜索、按需读取、Planning、确认和写工具完成多步任务；
-- 规定 `version_conflict`、`result_unknown` 和 `partial_success` 后的 Agent 行为；
-- 使用 Trace、Golden Set 和 Ring 发布定位并阻止行为回归。
+平台负责模型循环、Conversation、Planning、确认和流式输出；Extension 团队负责工具后端、权限、资源版本和幂等执行，这些不属于我的实现范围。
 
-## 这个项目可以深入到哪里
+## 三项能力
 
-- **为什么是一个 Agent**：三个 Capability 为什么共享 Agent，而不拆成多个 Agent 或固定 Workflow；
-- **能力怎样路由**：显式入口、界面 Anchor、用户 Utterance 和工具白名单怎样共同决定执行路径；
-- **Context 怎样管理**：哪些信息进入本轮、哪些进入任务状态、哪些必须从 Outlook 重新读取；
-- **邮箱整理怎样执行**：怎样从模糊目标进入搜索、Planning、确认、写操作、部分成功和 Replanning；
-- **工具错误怎样恢复**：权限、版本冲突、结果未知和部分成功为什么需要不同 Agent 行为；
-- **安全边界在哪里**：Instructions、工具白名单、平台确认和 Extension 授权分别解决什么问题；
-- **怎样定位工具误选**：如何通过 Trace 找到 Instructions、候选工具和 Description 的第一次偏离并回滚；
-- **怎样证明修复有效**：失败 Query、Capability 切片、全量 Golden Set 与 Ring 发布怎样形成闭环。
+| 能力 | 实现方式 | 项目工作 |
+| --- | --- | --- |
+| 划词解释 | 选区加固定 Prompt 直接生成 | 控制选区 Context、回答范围和 Citation |
+| 附件总结 | 调用附件提取 Extension 后生成 | 处理提取结果、不完整内容和来源引用 |
+| 邮箱整理 | 搜索、按需读取、计划确认后调用写工具 | 处理模糊目标、多轮修改和执行失败 |
 
-项目的技术深度不在自建模型循环，而在平台边界内把开放的模型判断约束成一条可观察、可确认、可恢复并可持续回归的邮件任务链。
+第一版邮箱整理只支持移动、归档和加旗标，不开放删除、发送和修改收件人等高风险动作。
+
+## 核心难点与解决方法
+
+项目最难的部分是邮箱整理。用户经常只说“整理一下最近需要跟进的邮件”，时间、筛选标准、动作和目标文件夹并不完整；候选邮件又只有搜索之后才能确定，因此不能直接写成一条固定 Workflow。但移动、归档和加旗标会真实修改邮箱，也不能让模型根据一段对话直接执行。
+
+我把它分成两个阶段。前半段只允许搜索和读取，Agent 通过必要的澄清、Insight Query 返回的 Top 12 候选和按需读取收敛目标范围；后半段把 Message ID、动作、目标 Folder 和资源版本交给平台 Planning，用户确认后再由邮件 Extension 执行。
+
+执行错误按工具返回的状态处理：`version_conflict` 重新读取并更新计划，`partial_success` 保留已经成功的邮件，`result_unknown` 沿用原 Operation ID 查询结果，不重新创建写请求。修复后的版本再通过邮箱整理场景回归和 Ring 发布。
+
+完整设计见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)。
+
+## 结果
+
+三项能力进入同一个 Outlook Declarative Agent。一次 Context 优化后，划词解释的平均输入从 **12,400 Token 降到 7,600 Token**；多轮邮箱整理 Scenario 的累计输入从 **46,000 Token 降到 34,000 Token**。当前评测基线中，`lm_checklist` 为 **87.6%**、`tool_call` 为 **93.8%**，严重安全违规为 **0**。
 
 ## 项目文档
 
-- [Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/)：Agent 代码与发布形态、统一 Agent、能力路由、多轮状态、Planning、终止和 Trace；
-- [Prompt 与 Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/)：分层 Prompt、界面 Context、证据选择、工具描述和失败归因；
-- [邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)：模糊目标、搜索、按需读取、计划确认、Replanning、部分成功和评测；
-- [工具设计与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)：Extension、错误语义、Operation ID、幂等、资源版本和部分失败；
-- [权限与用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/)：工具 Scope、对象级授权、风险配置、计划确认和 Prompt Injection；
-- [发布与生产运行]({{ site.baseurl }}/docs/career/copilot-capabilities/production/)：版本清单、质量门禁、Ring 灰度、Trace、指标和回滚；
-- [工具误选与发布回滚]({{ site.baseurl }}/docs/career/copilot-capabilities/incident-tool-routing/)：全局规则污染、工具误选、Trace 定位、配置修复和 Golden Set 闭环。
+- [Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/)：代码形态、平台边界和三项能力的接入方式；
+- [Prompt 与 Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/)：三类 Context、工具描述和 Token 优化；
+- [邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)：项目的核心业务与技术难点；
+- [工具错误与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)：版本冲突、部分成功和结果未知；
+- [权限与用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/)：权限边界、写操作确认和 Prompt Injection；
+- [发布与生产运行]({{ site.baseurl }}/docs/career/copilot-capabilities/production/)：评测、灰度、观测和回滚；
+- [工具误选与发布回滚]({{ site.baseurl }}/docs/career/copilot-capabilities/incident-tool-routing/)：一次场景工具配置问题的排查过程。
