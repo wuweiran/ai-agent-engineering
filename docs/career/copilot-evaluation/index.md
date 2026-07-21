@@ -55,17 +55,17 @@ SEVAL 提供通用 Metric，邮件业务再接入定制 Metric。主回归关注
 
 ## 主要工作
 
-我主要负责 Golden Set 及其对应的 Grounding Data 和 Assertion：
+我负责 Outlook Copilot 评测体系以及 Golden Set、Grounding Data 和 Assertion 的持续维护：
 
 - 维护由 CIQ 与 Utterance 组成的 Query；
-- 整理并复用 Query 背后的邮件集合；
-- 合并功能开发阶段分散维护的测试数据；
+- 维护 Query 与邮件集合之间的关联；
 - 使用内部平台生成的 eyes-off 脱敏结果，将真实用户 Utterance 纳入 Golden Set；
 - 优先复用能够关联较多 Query 的热点 Email；
 - 根据邮件证据编写和更新 Assertion；
+- 维护评测 Metric、版本回归、质量门禁和失败定位流程；
 - 保证 Query、Grounding Data 与 Assertion 的变更一致性。
 
-SEVAL 的 Job 管理由平台承担，通用 Metric 和各功能实现也不属于我的主要职责。
+统一 Golden Set 的整合由团队完成，不是我的个人交付。SEVAL 的 Job 管理由平台承担，各功能实现也不属于我的主要职责。
 
 ## 这个项目可以深入到哪里
 

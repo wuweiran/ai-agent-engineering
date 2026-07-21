@@ -3,7 +3,7 @@ layout: default
 title: 权限与用户确认
 parent: Outlook Copilot Agent 能力开发
 grand_parent: 工作经历
-nav_order: 4
+nav_order: 5
 permalink: /docs/career/copilot-capabilities/security-confirmation/
 ---
 
@@ -45,7 +45,7 @@ Copilot 平台为 Extension 调用附加当前用户身份；Extension 使用 On
 
 ## 什么时候需要确认
 
-用户确认使用 Copilot 平台已有的确认能力。是否确认由工具的风险配置和场景规则决定，不由模型自由选择。
+用户确认使用 Microsoft 365 Copilot 平台已有的确认能力。工具白名单只决定当前场景能否使用某项能力；是否确认由平台读取工具风险配置，并结合本次动作是否由用户明确指定、影响对象数量和可逆性执行，不由模型自由选择。
 
 | 风险级别 | 操作 | 策略 |
 | --- | --- | --- |

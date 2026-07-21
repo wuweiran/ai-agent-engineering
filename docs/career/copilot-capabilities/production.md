@@ -3,7 +3,7 @@ layout: default
 title: 发布与生产运行
 grand_parent: 工作经历
 parent: Outlook Copilot Agent 能力开发
-nav_order: 5
+nav_order: 6
 permalink: /docs/career/copilot-capabilities/production/
 ---
 
@@ -40,7 +40,13 @@ Outlook Side Panel
 → 模型继续回答或行动
 ```
 
-因此，这个项目的“部署”主要是 **Agent Definition 与场景配置发布**，而不是部署一套新的在线服务。
+因此，这个项目的“部署”主要是把源码仓库中的 Agent Definition、Instructions、Capability 配置和 Extension 声明构建成带版本的 Agent 发布包，再由 Microsoft 365 Copilot 平台托管和加载，而不是部署一套新的在线服务。代码与运行位置的完整划分见[Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#agent-代码以什么形式存在)。
+
+## 为什么不在项目侧做缓存
+
+项目不缓存模型回答、邮件正文、Tool Result 或动作计划。邮件内容、权限和资源版本会变化，跨用户复用存在数据泄露风险；写操作依赖最新对象状态，命中旧缓存反而可能扩大错误。平台和既有 Extension 可以在各自边界内缓存模型前缀、身份令牌或后端数据，但这些实现不属于本项目。
+
+项目侧的优化重点是减少无效 Context 和 Tool Call，而不是缓存动态结果：复用稳定 Instructions 的平台能力、移除被新结果替代的 Tool Result、通过 Side Panel Anchor 缩小读取范围，并在需要时重新读取 Outlook 对象。
 
 ## 版本控制
 
@@ -100,24 +106,28 @@ Agent 行为的完整离线评测在 SEVAL 中执行；邮件 Grounding Data、G
 
 ### 分阶段发布
 
-平台按用户稳定分 Ring，同一会话保持在同一 Agent Definition。内部 Ring 通过后进入 5%、25% 和 100%，每阶段观察 **24 小时**。
+平台按用户稳定分 Ring，同一会话保持在同一 Agent Definition。内部 Ring 验证通过后逐步扩大用户范围，每个阶段同时观察任务结果、工具行为、安全和性能，再决定继续或停止。
 
-Agent Definition、Instructions 和 Context 配置独立版本化。一次尽量只修改一层，便于出现线上变化时定位具体版本。
+Agent Definition、Instructions 和 Context 配置独立版本化。一次尽量只修改一层；必须同时修改 Prompt、工具白名单和 Description 时，将它们作为一个可回滚配置版本发布，便于出现线上变化时定位。
 
 ## 停止与回滚
 
 以下情况停止放量：
 
 - 权限泄露、未确认写入或 Prompt Injection 越权；
-- 写操作与平台确认计划不一致；
-- Agent 请求 P95 超过 **8 秒**或 P99 超过 **20 秒**；
-- 单次请求 Token 或费用上升超过 **15%**；
-- 无效 Tool Call、`result_unknown` 或 `partial_success` 持续高于基线 **2 倍**；
+- 写操作与平台确认范围不一致；
+- `lm_checklist`、Citation 或工具选择低于发布基线；
+- 简单场景的无效 Tool Call、模型轮次、延迟或 Token 明显高于上一版本；
+- `result_unknown`、`partial_success` 或用户重新确认持续偏离基线；
 - 关键 Extension 持续不可用，导致对应场景无法完成。
 
-任务完成率、事实完整性、Citation 和工具选择等质量门槛由 Copilot Evaluation 发布门禁判断。
+绝对阈值由当次模型部署、功能基线和 Copilot Evaluation 质量门禁共同确定，不把一组固定数字套用到所有 Capability 和模型版本。
 
-回滚通过平台版本指针将 Agent Definition、Instructions 或 Context 配置切回上一版本。Extension 自身发生故障时，项目可以从 Agent Definition 暂时移除该工具或在 Instructions 中禁用相关能力，并与 Extension 团队协同恢复。
+回滚通过平台版本指针将 Agent Definition、Instructions 或 Context 配置切回上一版本。Extension 自身发生故障时，项目可以从 Agent Definition 暂时移除该工具或在 Instructions 中禁用相关能力，并与 Extension 团队协同恢复。一次具体的工具误选和灰度回滚见[工具误选与发布回滚]({{ site.baseurl }}/docs/career/copilot-capabilities/incident-tool-routing/)。
+
+## 流式进度
+
+流式传输由 Microsoft 365 Copilot 平台提供，项目不实现 SSE 通道。Side Panel 需要区分文本增量、工具执行、等待确认、完成和失败等平台事件，不能把 Tool Call 等待期间的静默误显示为任务结束。项目配置场景输出和终止行为，并使用平台 Trace 排查事件顺序；网络重连、事件投递和流控属于平台职责。
 
 ## Trace
 
@@ -183,11 +193,20 @@ Copilot Conversation / Run
 
 排障从 Copilot Run ID 开始寻找第一次偏离：
 
-- Agent Instructions 或 Side Panel Context 缺少必要信息；
-- 模型选错工具或参数；
-- Extension Schema 与 Instructions 不一致；
-- 工具返回权限、版本或临时错误；
-- 平台 Planning 与用户确认未形成预期动作；
-- 最终模型没有正确使用 Tool Result。
+```text
+入口、Utterance 与 Side Panel Context
+→ Agent Definition / Scenario / Context Version
+→ 模型第一次决策
+→ Tool Call 与参数
+→ Extension Version 与 Tool Result
+→ 平台 Plan / Confirmation
+→ Final Answer
+```
 
-Prompt、Context 和 Agent Definition 问题由项目团队修复；模型循环、平台确认和 Extension 服务故障分别与 Microsoft 365 Copilot 平台团队或 Extension 团队协同处理。修复后通过 Copilot Evaluation 质量门禁，再由 Ring 逐步恢复发布。
+- Context 或 Instructions 缺少必要信息，由项目团队修复；
+- 候选工具集合、Description 或参数语义导致误选，由项目团队调整 Agent 配置；
+- Tool Call 正确但 Extension 返回错误，与依赖团队协同；
+- 平台没有按风险配置形成预期确认，与 Microsoft 365 Copilot 平台团队协同；
+- Tool Result 正确但最终回答遗漏或幻觉，检查 Capability Prompt 和 Context 排序。
+
+修复后把失败模式加入 Golden Set，先验证失败 Query，再运行 Capability 切片和全量回归，最后由 Ring 逐步恢复发布。Agent 开发与 Evaluation 的闭环不在生产事故后临时建立，而是在 2025 年两项工作重叠阶段成为固定流程。

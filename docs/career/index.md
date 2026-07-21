@@ -32,7 +32,7 @@ permalink: /docs/career/
 
 ## 2025.06—至今　[Copilot Evaluation 与 Golden Set]({{ site.baseurl }}/docs/career/copilot-evaluation/)
 
-2025 年 6 月开始参与建设 Golden Set 和回归评测流程，最初与 Copilot Agent 功能开发并行，2025 年 10 月后成为主要工作。所有 Evaluation Job 都运行在统一评测中台 SEVAL；平台承担 Job 管理，我主要维护由 CIQ 与 Utterance 组成的 Golden Set Query，以及对应的邮件 Grounding Data 和 Assertion。
+2025 年 6 月开始参与 Outlook Copilot 评测工作，最初与 Copilot Agent 功能开发并行，2025 年 10 月后成为主要工作。主要负责评测体系，以及 Golden Set Query、邮件 Grounding Data 和 Assertion 的持续维护；Evaluation Job 运行在统一评测中台 SEVAL。
 
 这套数据最初由各功能开发者分散添加，后来集中维护以复用不断增长的邮件集合；再通过内部 LLM 平台以 eyes-off 方式脱敏真实用户 Utterance，并优先复用能关联较多 Query 的热点 Email，改善开发者构造样例无法反映真实输入分布的问题。Agent 结果通过 LM Checklist 和邮件业务 Metric 评分。
 

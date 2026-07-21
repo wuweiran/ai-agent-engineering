@@ -3,7 +3,7 @@ layout: default
 title: 工具错误与执行控制
 parent: Outlook Copilot Agent 能力开发
 grand_parent: 工作经历
-nav_order: 3
+nav_order: 4
 permalink: /docs/career/copilot-capabilities/tool-execution/
 ---
 
@@ -106,8 +106,20 @@ Agent 的正确行为是：
 - 若要更改失败项动作，重新计划和确认；
 - 不重新提交已经成功的邮件。
 
+## 降级与终止
+
+工具不可用时不统一返回“稍后重试”，而是根据任务是否仍能提供可信结果决定降级：
+
+- 搜索工具不可用：当前邮件已有足够证据时只回答当前邮件；跨邮箱任务明确说明无法完成，不伪造候选；
+- 附件提取失败：保留已成功提取的附件或页面，并将结果标记为 partial；
+- 写工具不可用：可以保留已确认计划和目标范围，但不能宣称已经执行；
+- 权限错误：停止对应对象，不用更宽泛搜索猜测其内容；
+- 相同错误重复出现且没有新信息：结束当前执行并说明未完成部分。
+
+降级后的完成条件也必须改变。只能提供当前邮件答案时，不能把它表述为跨邮箱完整结果；只能生成计划时，不能把它表述为动作已完成。
+
 ## 线上关注点
 
-项目侧关注每个工具的调用量、成功率、P95/P99、稳定错误分布、重复 Tool Call、用户重新确认和部分成功比例，重点判断 Agent 是否正确理解 Tool Result。工具服务内部的幂等命中、存储和资源指标由 Extension 团队负责。
+项目侧关注每个工具的调用量、成功率、稳定错误分布、重复 Tool Call、用户重新确认和部分成功比例，重点判断 Agent 是否正确理解 Tool Result。工具服务内部的幂等命中、存储和资源指标由 Extension 团队负责。
 
-工具选择、错误恢复和部分成功的完整离线评测统一进入 [Copilot Evaluation 与 Golden Set]({{ site.baseurl }}/docs/career/copilot-evaluation/)。
+一次候选工具与 Description 设计导致误选的问题见[工具误选与发布回滚]({{ site.baseurl }}/docs/career/copilot-capabilities/incident-tool-routing/)。工具选择、错误恢复和部分成功的完整离线评测统一进入 [Copilot Evaluation 与 Golden Set]({{ site.baseurl }}/docs/career/copilot-evaluation/)。

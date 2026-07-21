@@ -90,14 +90,16 @@ Grounding Data 的选择优先使用 **热点 Email**，即脱敏后的真实输
 
 ## 我的职责
 
-我负责 Golden Set 以及对应 Grounding Data 和 Assertion 的维护，具体包括：
+我负责 Golden Set 以及对应 Grounding Data 和 Assertion 的持续维护，具体包括：
 
 - 维护由 CIQ 与 Utterance 组成的 Query；
-- 整理 Query 与邮件集合之间的关联；
-- 合并重复邮件和重复 Query，优先使用能够承载较多 Query 的热点 Email；
+- 维护 Query 与邮件集合之间的关联；
+- 优先使用能够承载较多 Query 的热点 Email；
 - 使用内部平台在 eyes-off 条件下产生的脱敏结果，将真实用户 Utterance 纳入 Golden Set；
 - 根据邮件证据维护每条 Query 对应的 Assertion；
 - 在邮件、Query 或 Assertion 变化时保持三者一致。
+
+统一 Golden Set 从分散数据中整合出来是团队演进背景，不是我的个人交付。
 
 SEVAL 的 Job 调度和运行管理由平台负责，Metric 的通用执行逻辑也不属于我的实现范围。我的工作重点是保证输入给平台的 Query、邮件证据和评测规则长期可信，否则 Job 即使稳定运行，得到的分数也不能代表真实产品质量。
 
