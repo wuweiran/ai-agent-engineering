@@ -31,7 +31,7 @@ permalink: /docs/interview/backend/
   - 这一层回答：**谁在请求、能操作什么、输入是否合法、重复请求是否得到同一结果。**
 
 - **进程内执行与 Java 运行时**
-  - **[Java 技术栈]({{ site.baseurl }}/docs/interview/backend/java-jvm/)**：集合、HashMap、ConcurrentHashMap、泛型、异常、线程池、`synchronized`、Lock、volatile、CAS、ABA、ThreadLocal、JMM、happens-before
+  - **[Java 技术栈]({{ site.baseurl }}/docs/interview/backend/java-jvm/)**：集合、HashMap、ConcurrentHashMap、泛型、异常、进程/线程/协程、线程池参数与拒绝策略、`synchronized`、Lock、volatile、CAS、ABA、ThreadLocal、JMM、happens-before
   - **Spring**：IoC、Bean、AOP、`@Transactional`、事务传播、Spring Boot 自动配置
   - **JVM**：类加载与双亲委派、运行时内存、GC Roots、垃圾回收算法、G1、ZGC、Shenandoah、CPU 过高、Full GC、OOM
   - 这一层回答：**一个服务实例怎样组织代码、控制并发并管理运行资源。**

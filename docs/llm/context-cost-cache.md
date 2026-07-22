@@ -38,7 +38,7 @@ permalink: /docs/llm/context-cost-cache/
 
 不同内容应按用途选择保留方式：**近期交互保留原文，早期讨论进行压缩，大型日志和文档留在外部系统，稳定规则放在版本化配置中，长期经验经过筛选后进入记忆。**
 
-[**滑动窗口与摘要**]({{ site.baseurl }}/docs/interview/ai-agent/llm/#context-overflow-window-summary)解决不同问题。**滑动窗口**只保留最近消息，实现简单并保留原文，却可能丢掉最初目标；**摘要**把较早历史压缩成事实、决定和待办，能够保留更远语义，却可能遗漏细节或引入错误。[长对话中的关键信息保留]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#long-context-key-information)还需要**结构化任务状态、选择性保留和按需重读**：目标、约束、未完成事项和关键结果不应只依赖向量检索或一份滚动摘要。
+[**滑动窗口与摘要**]({{ site.baseurl }}/docs/interview/ai-agent/llm/#context-overflow-window-summary)解决不同问题。**滑动窗口**只保留最近消息，实现简单并保留原文，却可能丢掉最初目标；**摘要**把较早历史压缩成事实、决定和待办，能够保留更远语义，却可能遗漏细节或引入错误。[Agent 的长短期记忆管理]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#long-context-key-information)还需要**结构化任务状态、选择性保留和按需重读**：目标、约束、未完成事项和关键结果不应只依赖向量检索或一份滚动摘要。用户修改约束后还要让旧值失效，冲突事实则根据来源、时间和权威系统处理，不能由摘要自行合并。
 
 长任务还可以让子 Agent 使用独立 Context，只把结论、证据和未知项带回主任务。这减少信息污染，却要求委派与返回契约足够清楚。
 

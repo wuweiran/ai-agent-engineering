@@ -90,6 +90,41 @@ Agent 的基本架构包括：
 
 相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)、[Agent Planning]({{ site.baseurl }}/docs/ai-agent/agent-design/planning/)。
 
+## LangChain 和 LangGraph 分别解决什么问题？
+{: #langchain-langgraph }
+
+- **LangChain**：提供模型、Prompt、Retriever、工具和 Agent 等组件及集成，适合快速组装 LLM 应用、RAG 和工具链路；
+- **LangGraph**：用节点、边和共享状态显式描述有状态执行流程，适合条件分支、循环、检查点、恢复和人工介入。
+
+两者可以组合，LangGraph 可以复用 LangChain 的模型和工具组件。简单调用或线性流程不一定需要 LangGraph；路径会动态变化、需要保存执行状态并从中断处恢复时，图编排更有价值。两者都不会自动解决业务权限、权威状态和生产部署。
+
+相关内容：[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
+
+## 什么是意图识别？它在 Agent 系统中处于什么环节？
+{: #agent-intent-recognition }
+
+**意图识别是判断用户想完成什么目标，以及系统接下来应进入哪类任务。**同一句“帮我处理一下”可能表示总结、查询或执行写操作，意图不等于原始句子中的关键词。
+
+它通常发生在输入和界面 Context 规范化之后、任务路由和 Planning 之前：
+
+```text
+用户输入与当前 Context
+→ 意图识别和必要的实体提取
+→ 选择任务、工具集合或固定流程
+→ Planning 与执行
+```
+
+常见实现包括：
+
+- 明确按钮、命令和关键词使用确定性规则；
+- 高频且类别稳定的场景使用分类模型或 Embedding 相似度；
+- 开放表达使用大模型按 Schema 返回意图、实体、置信信息和缺失字段；
+- 生产系统常采用规则优先、模型补充的混合路由，并保留 `unknown` 和多意图结果。
+
+低置信度不应机械等同于追问。只读、可撤销操作可以说明假设后继续；存在多个合理解释或涉及高风险写入时，才提出会改变后续路径的最小澄清。意图确定后仍要由权限和业务规则校验真实动作。
+
+相关内容：[模型、程序与人的决策边界]({{ site.baseurl }}/docs/ai-agent/agent-design/decision-boundary/)。
+
 ## 用户意图模糊或信息不足时，Agent 怎样处理？
 {: #agent-intent-ambiguity }
 
@@ -129,17 +164,18 @@ Agent 的基本架构包括：
 
 相关内容：[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)。
 
-## 怎样设计 Agent 的工具调用能力？
+## 如何提升 Agent 的工具调用正确率？
 {: #agent-tool-calling-design }
 
-**模型只负责提出调用，Runtime 负责安全执行并确认结果。**技术方案主要包含四部分：
+工具调用正确率要拆成**候选工具召回、工具选择、参数生成和结果处理**分别优化：
 
-1. **工具契约**：围绕稳定业务动作设计名称、描述、参数 Schema 和返回状态；读取、资格判断和真实写入通常分开；
-2. **工具选择**：只暴露当前任务和权限范围内的能力；工具很多时先检索候选，再加载完整 Schema；
-3. **执行边界**：Runtime 校验参数、身份、权限、审批和业务状态，再调用真实服务并返回 Tool Result；
-4. **可靠性**：写操作使用幂等键和状态查询，超时区分失败与结果未知，并用 Trace 记录完整调用链。
+1. **减少候选**：只暴露当前任务和权限范围内的工具；工具很多时先检索候选，再加载完整 Schema；
+2. **写清契约**：名称和 Description 说明何时使用、返回什么、不能替代什么，重叠工具优先合并或显式路由；
+3. **约束参数**：使用明确类型、枚举、必填字段和业务对象 ID，减少自由文本；Runtime 仍要执行 Schema 与业务校验；
+4. **稳定结果**：Tool Result 区分成功、参数错误、权限不足、临时失败和结果未知，让模型能够正确选择下一步；
+5. **用 Trace 和评测迭代**：分别统计候选召回率、工具选择率、参数正确率和任务完成率，从第一次错误决策定位 Prompt、Schema 还是工具实现。
 
-实现时可以基于模型原生 Tool Calling 自建循环，也可以使用 Agent SDK 复用循环、状态和观测能力；MCP 用于标准化接入外部能力。框架选型主要看权限、恢复、审批、Trace、部署环境和维护成本。
+高风险工具还要在模型之外实施鉴权、确认和幂等。提升正确率不能靠不断向 Prompt 追加规则，也不能把参数符合 Schema 等同于业务执行正确。
 
 相关内容：[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)、[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
 

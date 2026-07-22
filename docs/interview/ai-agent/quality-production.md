@@ -73,7 +73,7 @@ RAG 和模型自检只能降低风险，不能保证消除幻觉。
 
 相关内容：[Agent 评测]({{ site.baseurl }}/docs/ai-agent/agent-quality/evaluation/)。
 
-## 怎样量化上线后的 Agent？除了准确率还看什么？
+## 如何评估一个 AI Agent？有哪些可量化指标？
 {: #online-agent-metrics }
 
 指标可以分四层：
@@ -86,6 +86,19 @@ RAG 和模型自检只能降低风险，不能保证消除幻觉。
 用户满意度和投诉可以补充观察，但不能替代可核验的业务结果。指标还要按任务类型和风险分层，并能回到具体 Trace。
 
 相关内容：[Agent 评测]({{ site.baseurl }}/docs/ai-agent/agent-quality/evaluation/)。
+
+## 相关性、完整性和一致性分别衡量什么？
+{: #relevance-completeness-consistency }
+
+它们是开放语义结果的三个不同质量维度：
+
+- **相关性（Relevance）**：回答是否针对用户当前问题，检索证据是否与 Query 相关；内容真实但没有回答问题，相关性仍然低；
+- **完整性（Completeness）**：用户目标中的关键要求、子问题和必要事实是否都被覆盖；回答每句话都正确，也可能遗漏一半任务；
+- **一致性（Consistency）**：回答内部是否自相矛盾，多轮回答是否遵守已确认约束，结果是否与工具状态和权威数据一致。
+
+评测时不能只给一个模糊总分。相关性可以基于 Query—回答或 Query—Chunk 评分；完整性适合把要求拆成 Checklist 或 Assertion 后计算覆盖率；一致性要加入冲突资料、用户改口和多轮 Scenario，并用程序核对结构化状态与工具结果。三者都不能替代 Faithfulness：回答可能相关、完整且内部一致，却仍然没有证据支持。
+
+相关内容：[Agent 评测]({{ site.baseurl }}/docs/ai-agent/agent-quality/evaluation/)、[RAG 与知识检索]({{ site.baseurl }}/docs/llm/rag/)。
 
 ## 怎样证明一次 Agent 优化真的有效？
 {: #agent-optimization-evidence }

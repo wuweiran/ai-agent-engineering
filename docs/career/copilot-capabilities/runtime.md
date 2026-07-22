@@ -54,13 +54,43 @@ Agent 源码与配置
 
 显式的选区和附件入口由客户端直接选择场景。普通 Side Panel 输入由模型结合用户表达和当前 Outlook 对象判断是直接回答、搜索邮件还是进入邮箱整理。划词解释不会加载邮箱搜索和写工具，避免简单请求误调用无关 Extension。
 
-## 请求执行
+## 完整工具调用链路
 
-客户端只提供当前任务需要的对象标识和少量界面内容，不预加载整个邮箱或全部附件。模型需要更多信息时生成 Tool Call，平台附加用户身份并调用 Extension，Tool Result 再返回模型。
+工具首先以 Extension 的形式注册到 Microsoft 365 Copilot 平台，向模型暴露工具名称、Description 和参数 Schema。项目不实现这些工具的 Handler，但需要把使用边界写清楚：`search_outlook_context` 用于发现未知邮件，`read_outlook_message` 用于读取已知 Message ID，移动、归档和加旗标工具只处理已经确认的目标对象。
 
-邮箱整理第一轮只使用搜索和读取。Insight Query 最多返回 Top 12 候选，模型只对需要判断行动项、回复状态或归属的邮件读取详情。形成目标范围后，平台展示计划并确认，再调用移动、归档或加旗标工具。
+一次调用分成四步：
 
-完整的邮箱整理流程见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)。
+### 工具选择
+
+客户端只提供当前任务需要的对象标识和少量界面内容，不预加载整个邮箱或全部附件。平台根据 Capability 加载当前场景的 Instructions、Context 和工具 Schema：划词解释不加载工具，附件总结只加载附件提取，邮箱整理才加载搜索、读取和写工具。
+
+模型结合用户输入、当前 Message、Attachment 或 Folder，以及工具 Description 选择是否调用工具。这里的“模型选择”是模型从当前候选工具中选择下一步，不是项目团队选择底层模型；Model Deployment 由 Microsoft 365 Copilot 平台负责。
+
+### 参数提取
+
+模型按照工具 Schema 从用户输入和已确认任务状态中生成结构化参数。以“找出最近两周需要我跟进的邮件”为例，搜索参数包含查询条件、起止时间和已知参与人；当前用户、Tenant、访问令牌和服务端候选上限不让模型填写，由平台和 Extension 根据请求补充。
+
+平台先做 Schema 校验，Extension 再检查参数范围、用户权限和业务对象。缺少时间可以在只读搜索中使用场景默认值；动作或目标 Folder 不明确时必须向用户澄清，不能生成写 Tool Call。
+
+### 工具执行
+
+参数校验通过后，平台附加当前用户身份并调用已有 Extension。Insight Query 返回最多 Top 12 轻量候选，包括 Message ID、Snippet、时间和 Citation；模型只对需要判断回复状态、行动项或归属的候选继续调用邮件读取工具。
+
+形成目标邮件和动作范围后，平台展示计划并取得确认，再调用移动、归档或加旗标工具。写 Extension 在执行时继续校验权限和资源版本，并按邮件返回结果。
+
+### 结果处理
+
+Tool Result 回到同一个 Conversation，模型根据结果决定回答、继续读取、更新计划或停止：
+
+- 搜索成功：根据候选决定是否读取详情，不重复搜索相同条件；
+- `version_conflict`：重新读取变化的邮件，范围变化时更新计划并重新确认；
+- `partial_success`：保留成功项，只处理失败和未知项；
+- `result_unknown`：沿用原 Operation ID 查询状态，不创建新的写请求；
+- `permission_denied`：停止处理该对象，不扩大搜索绕过权限。
+
+最终回答会区分已经完成、失败和状态未知的邮件，并保留必要 Citation。平台 Trace 记录本轮 Context、候选工具、Tool Call、参数摘要、Tool Result 和最终回答，用于判断问题出在工具选择、参数生成、Extension 执行还是结果理解。
+
+完整的邮箱整理流程见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)，错误处理见[工具错误与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)。
 
 ## 多轮状态
 
