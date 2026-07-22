@@ -10,7 +10,7 @@ permalink: /docs/career/
 
 2022 年 5 月加入微软时，主要从事后端开发。此后的工作从工作流系统逐渐转向 Outlook Copilot，包括 Context 服务、Agent 能力开发和评测体系。
 
-这条时间线只记录项目和主要工作。团队分工、系统设计、接口、评测方法、上线过程和实际问题，会在后续项目文档中分别展开。
+这条时间线只记录项目和主要工作。团队分工、系统设计、接口、评测方法、上线过程和实际问题，会在后续项目文档中分别展开。需要按通用 Agent 技术栈理解这些项目时，可查看 [AI Agent 技术栈与项目映射]({{ site.baseurl }}/docs/career/ai-agent-stack/)。
 
 ## 2022.05—2023.12　[Microsoft Purview 工作流]({{ site.baseurl }}/docs/career/purview-workflow/)
 
