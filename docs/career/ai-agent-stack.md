@@ -49,7 +49,7 @@ permalink: /docs/career/ai-agent-stack/
 | 安全与权限 | Insight Service；Outlook Copilot Agent | Microsoft Entra ID、OBO、`Mail.Read` / `Mail.ReadWrite`、对象级权限、平台确认 | 实现或接入权限过滤；限制工具可见性，确保写操作走确认和 Extension 校验 |
 | Agent Evaluation | Copilot Evaluation 与 Golden Set | SEVAL、Query Set、CIQ、Grounding Data、Assertion、LM Checklist、业务 Metrics | 持续维护评测资产、真实脱敏 Utterance、Baseline/SDF 回归、质量门禁和 Trace 定位 |
 | 竞品评测 | Copilot Bake-off | Playwright scraping、Google Workspace ingestion、User/Email/Golden Set Mapping、SEVAL LM Checklist | 搭建 Gmail Gemini 自动执行和跨系统映射，生成 Query 级产品差距并回流常规回归 |
-| 生产后端 | Purview；Insight Service；Bake-off | Scala + ZIO、Java 17 + Spring Boot 3 + WebFlux、Substrate、Playwright Worker | 后端服务开发、性能与容量控制、监控、灰度、故障排查和跨团队依赖协作 |
+| 生产后端 | Purview；Insight Service；Bake-off | Scala + ZIO、Java 21 + Spring Boot 3 + WebFlux、Substrate、Playwright Worker | 后端服务开发、性能与容量控制、监控、灰度、故障排查和跨团队依赖协作 |
 
 ## 项目在 Agent 链路中的位置
 

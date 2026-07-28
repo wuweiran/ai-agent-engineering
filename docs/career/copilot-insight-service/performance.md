@@ -13,11 +13,11 @@ permalink: /docs/career/copilot-insight-service/performance/
 
 `/insights/query` 的生产流量是单区域峰值 **250 RPS**，单次请求最多读取 4 页、评估 200 条邮件候选，并返回 Top 12。优化后的端到端延迟是：
 
-- P50：**180 ms**；
-- P95：**620 ms**；
-- P99：**1.4 s**；
-- 超时率：**0.2%**；
-- 成功率：**99.95%**。
+- P50：**320 ms**；
+- P95：**1.1 s**；
+- P99：**2.1 s**；
+- 超时率：**0.4%**；
+- 成功率：**99.5%**。
 
 接口 Deadline 是 **3 秒**。达到 Deadline 时停止继续翻页，使用已经处理的候选返回 `partial=true` 和 Warning，而不是让整个 Tool Call 失败。
 
@@ -25,12 +25,12 @@ permalink: /docs/career/copilot-insight-service/performance/
 
 | 阶段 | P95 |
 | --- | ---: |
-| Token 验证与 OBO | 25 ms |
-| 第一页 Outlook Search | 260 ms |
-| 后续分页 | 210 ms |
-| 权限校验、去重和打分 | 55 ms |
-| Top-K 与响应序列化 | 20 ms |
-| 网络与框架开销 | 50 ms |
+| Token 验证与 OBO | 55 ms |
+| 第一页 Outlook Search | 460 ms |
+| 后续分页 | 360 ms |
+| 权限校验、去重和打分 | 90 ms |
+| Top-K 与响应序列化 | 35 ms |
+| 网络与框架开销 | 100 ms |
 
 第一页决定大部分请求的延迟。后续页面依赖上一页游标，不能并行请求；性能优化的重点是减少不必要的翻页，而不是盲目增加并发。
 
@@ -38,7 +38,7 @@ permalink: /docs/career/copilot-insight-service/performance/
 
 ### 尽早下推过滤条件
 
-绝对时间、Person ID、Folder 和当前邮件 Anchor 尽量传给 Outlook Search，在数据源侧缩小候选。服务端过滤只能删除已经返回的数据，无法节省下游检索时间和网络开销。
+绝对时间、用户 UUID、Folder 和当前邮件 Anchor 尽量传给 Outlook Search，在数据源侧缩小候选。服务端过滤只能删除已经返回的数据，无法节省下游检索时间和网络开销。
 
 Query 缺少时间范围时，服务默认只搜索最近 **90 天**。模型明确请求更早内容时可以扩大到 **1 年**，再大的范围要求收紧 Query，避免一次工具调用扫描整个邮箱历史。
 
@@ -50,7 +50,7 @@ Query 缺少时间范围时，服务默认只搜索最近 **90 天**。模型明
 - 第 12 名分数高于 **0.72**；
 - 当前页最后一名的校准搜索分数低于 **0.35**。
 
-这表示已经保留 12 条高质量候选，后续低分页面很难改变 Top-K。提前停止把平均搜索页数从 **3.1 页降到 1.7 页**，P95 从 **980 ms 降到 620 ms**。
+这表示已经保留 12 条高质量候选，后续低分页面很难改变 Top-K。提前停止把平均搜索页数从 **3.1 页降到 1.7 页**，P95 从 **1.7 秒降到 1.1 秒**。
 
 ### 有界内存和返回体
 
@@ -78,7 +78,7 @@ Query 结果、Snippet 和邮件正文不缓存。原因有三点：
 
 OBO 换取的 Outlook Search Token 按用户、租户、Scope 和目标资源缓存在内存中，在 Token 到期前 **5 分钟**停止复用。缓存容量是每实例 **5 万条**，使用 LRU 淘汰，命中率为 **96%**。
 
-缓存只保存访问令牌及到期时间，不缓存邮件权限结果。Token 获取失败时不复用过期 Token，也不降级为应用身份。
+缓存只保存 Outlook Search Token 及到期时间，不缓存邮件权限结果。Token 获取失败时不复用过期 Token，也不降级为应用身份。
 
 ### 缓存稳定元数据
 
@@ -89,7 +89,7 @@ OBO 换取的 Outlook Search Token 按用户、租户、Scope 和目标资源缓
 - Tokenizer 配置；
 - 下游 Endpoint 和功能开关。
 
-这些配置带版本号，发布或配置变更时主动失效。Person ID 和对象权限不放入跨请求长期缓存，避免组织关系或授权变更后继续使用旧结果。
+这些配置带版本号，发布或配置变更时主动失效。用户 UUID 和对象权限不放入跨请求长期缓存，避免组织关系或授权变更后继续使用旧结果。
 
 ## 降级与过载保护
 
@@ -107,7 +107,7 @@ Outlook Search 延迟升高时，服务按剩余 Deadline 决定是否继续翻�
 
 每次排序、分页或连接池修改都使用同一组 Query 和邮箱快照做回归，比较：
 
-- Recall@12 和 Top 3 命中率；
+- [Recall@12]({{ site.baseurl }}/docs/career/copilot-insight-service/evaluation/#recall-at-12) 和 Top 3 命中率；
 - 平均搜索页数和下游请求数；
 - P50、P95、P99 和超时率；
 - 响应大小和 Tool Result Token；

@@ -11,7 +11,9 @@ permalink: /docs/career/copilot-insight-service/production/
 
 ## 技术栈
 
-Insight Service 使用 **Java 17、Spring Boot 3 和 WebFlux** 开发，部署在微软内部的 **Substrate 基础设施**上。服务使用 WebClient 异步调用 Outlook Search 和 Microsoft Graph，通过 MSAL4J 完成 Microsoft Entra ID Token 验证和 On-Behalf-Of 换取下游令牌。
+Insight Service 使用 **Java 21、Spring Boot 3 和 WebFlux** 开发，部署在微软内部的 **Substrate 基础设施**上。服务使用 WebClient 异步调用 Outlook Search 和 Microsoft Graph，通过 MSAL4J 完成 Microsoft Entra ID Token 验证和 On-Behalf-Of 换取下游 Token。
+
+Query 接口返回 `Mono<QueryResponse>`，使用 `flatMap` 串联 Token、Outlook Search 分页和结果处理，并通过 `timeout` 与 `onErrorResume` 返回部分结果。WebClient 等待下游响应时不会占住请求线程；代码中不使用 `.block()`，避免阻塞 Reactor Event Loop。
 
 Query 链路没有自己的邮件数据库。邮件候选来自 Outlook Search，只在当前请求内存中维护游标、去重集合和 Top 12 最小堆。服务使用 OpenTelemetry 记录 Metrics、Log 和 Trace，并接入内部监控和告警平台。
 
@@ -37,11 +39,15 @@ Outlook Copilot Runtime
 - 单实例最大处理 **200 个并发 Query**；
 - Outlook Search HTTP/2 连接池上限为 **100 个连接**。
 
-服务使用滚动发布，先让新版本承接 **5% 流量**，观察 Query 质量和 P95/P99 后逐步放量。Substrate 健康检查失败后停止向实例发送新请求；正在执行的 Query 在 3 秒 Deadline 内完成或返回部分结果。
+## 灰度与回滚
+
+版本必须先通过自动化[质量门禁]({{ site.baseurl }}/docs/career/copilot-insight-service/evaluation/)，再使用滚动发布让新版本承接 **5% 流量**。灰度期间按版本比较无结果率、Conversation 后续读取率、Query 改写率、用户重试率、下游页数和 P95/P99，稳定后再逐步放量。
+
+出现权限或 Citation 错误时立即回滚；质量或性能持续越过门槛时停止放量。Substrate 健康检查失败后停止向实例发送新请求，正在执行的 Query 在 3 秒 Deadline 内完成或返回部分结果。
 
 ## 扩缩容与容量
 
-单区域生产峰值为 **250 RPS**，接口成功率为 **99.95%**。Substrate 根据 CPU、实例 RPS 和入口队列自动扩缩容：
+单区域生产峰值为 **250 RPS**，接口成功率为 **99.5%**。Substrate 根据 CPU、实例 RPS 和入口队列自动扩缩容：
 
 - CPU 连续 10 分钟超过 **65%**时扩容；
 - 单实例 RPS 超过 **35**时扩容；
@@ -62,7 +68,7 @@ Outlook Search 是主要容量依赖。每个 Query 最多读取 4 页、评估 
 - OBO Token Cache 容量为 **5 万条**，命中率为 **96%**；
 - Token 到期前 5 分钟停止复用；
 - Tool Schema、排序权重、阈值、Endpoint 和功能开关按版本缓存；
-- 不缓存对象权限判断和 Person ID。
+- 不缓存对象权限判断和用户 UUID。
 
 因此，服务实例可以随时替换，不需要迁移请求状态或本地数据。
 
@@ -83,14 +89,14 @@ Outlook Search 是主要容量依赖。每个 Query 最多读取 4 页、评估 
 
 ### 延迟与下游
 
-- Query P50 **180 ms**、P95 **620 ms**、P99 **1.4 s**；
-- 超时率 **0.2%**，`partial` 比例 **0.7%**；
+- Query P50 **320 ms**、P95 **1.1 s**、P99 **2.1 s**；
+- 超时率 **0.4%**，`partial` 比例 **1.1%**；
 - Token 验证与 OBO、第一页搜索、后续分页、权限过滤、打分和序列化的阶段耗时；
 - Outlook Search 的请求量、P95/P99、429、5xx、超时和 Retry-After；
 - OBO Token Cache 命中率与 Token 获取失败率；
 - 平均搜索页数和下游请求数。
 
-P95 超过 **700 ms**或 P99 超过 **1.5 秒**持续 10 分钟触发告警。Outlook Search 429 超过 **1%**时降低区域并发，避免重试继续放大下游压力。
+P95 超过 **1.3 秒**或 P99 超过 **2.4 秒**持续 10 分钟触发告警。Outlook Search 429 超过 **1%**时降低区域并发，避免重试继续放大下游压力。
 
 ### 权限与安全
 
@@ -115,7 +121,7 @@ Trace 使用 Request ID 串联 Runtime Tool Call、Insight Query、OBO、Outlook
 
 ## Outlook Search 限流事故
 
-一次排序版本发布后，Query P99 从 **1.4 秒**升到 **4.8 秒**，`partial` 比例从 **0.7%**升到 **12%**，Outlook Search 429 达到 **8.2%**。服务实例 CPU 和内存正常，但区域入口队列持续增长，说明瓶颈不在 Insight Service 计算资源。
+一次排序版本发布后，Query P99 从 **2.1 秒**升到 **4.8 秒**，`partial` 比例从 **1.1%**升到 **12%**，Outlook Search 429 达到 **8.2%**。服务实例 CPU 和内存正常，但区域入口队列持续增长，说明瓶颈不在 Insight Service 计算资源。
 
 按版本和阶段拆分 Trace 后发现，第一页搜索延迟没有明显变化，平均搜索页数却从 **1.7 页**升到 **3.6 页**。该版本为了提高 Recall@12，提高了提前停止阈值，更多请求会继续读取第三页和第四页。下游请求量随之翻倍，触发 Outlook Search 区域限流；Insight Service 对 429 的一次重试又进一步放大了请求量。
 
@@ -131,14 +137,14 @@ Trace 使用 Request ID 串联 Runtime Tool Call、Insight Query、OBO、Outlook
 
 应急处理先回滚排序与提前停止配置，随后临时关闭 429 自动重试，并把区域 Query 并发从 **250 RPS**降到 **160 RPS**。已有候选的请求直接返回 `partial=true`，没有候选的请求返回数据源繁忙，避免请求在入口队列中等待到 Deadline。
 
-回滚后 429 在 15 分钟内降到 **0.6%**，P99 恢复到 **1.5 秒**以内。根因不是排序公式本身，而是排序门槛改变了分页行为，却只检查了单请求 Recall@12 和延迟，没有评估区域总下游请求量。
+回滚后 429 在 15 分钟内降到 **0.6%**，P99 恢复到 **2.4 秒**以内。根因不是排序公式本身，而是排序门槛改变了分页行为，却只检查了单请求 Recall@12 和延迟，没有评估区域总下游请求量。
 
 最终修复包括：
 
 1. 恢复第 12 名 **0.72**和页尾搜索分数 **0.35**的提前停止条件；
 2. 将平均搜索页数和每 Query 下游请求数加入发布门槛；
 3. Outlook Search 429 超过 **1%**时自动降低区域并发；
-4. 严格遵守 `Retry-After`，同一 Query 最多重试一次，并将重试计入剩余 Deadline；
+4. Outlook Search 返回 429 时，按 `Retry-After` 指定的等待时间重试；同一 Query 最多重试一次，等待和重试都计入剩余 Deadline；
 5. 容量测试同时模拟多个实例的区域总流量，不再只测试单实例吞吐。
 
 这次事故说明，RAG 排序和性能不能分开优化。一个看似只影响 Recall 的阈值，会改变分页深度和下游放大倍数；发布时必须同时比较 Recall@12、平均页数、下游请求数、P95/P99 和 429。

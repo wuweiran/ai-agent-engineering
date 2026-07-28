@@ -19,7 +19,7 @@ permalink: /docs/career/copilot-capabilities/security-confirmation/
 → Extension 对象级权限检查
 ```
 
-划词解释不加载邮件写工具，附件总结只加载附件提取，邮箱整理才加载移动、归档和加旗标。只读工具使用 `Mail.Read`，写工具使用 `Mail.ReadWrite`。Tenant、User 和访问令牌不作为模型参数。
+划词解释不加载邮件写工具，附件总结只加载附件提取，邮箱整理才加载移动、归档和加旗标。只读工具使用 `Mail.Read`，写工具使用 `Mail.ReadWrite`。Tenant、User 和用户 Token 不作为模型参数。
 
 Extension 返回 `permission_denied` 后，Agent 停止处理该对象，不改用其他身份，也不通过更宽泛的搜索推测邮件内容。项目日志只记录资源 ID、工具和错误状态，不保存完整邮件、附件或用户 Token。
 

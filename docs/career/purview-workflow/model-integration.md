@@ -28,7 +28,7 @@ POST https://{resource}.openai.azure.com/
      ?api-version=2023-05-15
 ```
 
-请求使用部署名而不是直接传模型名。服务通过 Microsoft Entra ID 的托管身份取得访问令牌，模型 Endpoint、Deployment 和 API Version 由区域配置管理，不在 Workflow Definition 或前端保存凭据。
+请求使用部署名而不是直接传模型名。服务通过 Microsoft Entra ID 的托管身份取得 Access Token，模型 Endpoint、Deployment 和 API Version 由区域配置管理，不在 Workflow Definition 或前端保存凭据。
 
 一次请求包含：
 

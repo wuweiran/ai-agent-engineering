@@ -96,7 +96,7 @@ Blob Lifecycle Policy 将 **90 天**以前的历史转到 Cool Tier，保留 **1
 
 ## Azure OpenAI 部署与容量
 
-每个 Geography 使用同区域的 Azure OpenAI Resource 和 `gpt-35-turbo` Deployment，Workflow Definition 不跨区域发送。Scala 服务通过 Microsoft Entra ID 托管身份取得访问令牌，Endpoint、Deployment、API Version 和 Prompt Version 由区域配置管理。
+每个 Geography 使用同区域的 Azure OpenAI Resource 和 `gpt-35-turbo` Deployment，Workflow Definition 不跨区域发送。Scala 服务通过 Microsoft Entra ID 托管身份取得 Access Token，Endpoint、Deployment、API Version 和 Prompt Version 由区域配置管理。
 
 单区域每天处理 **2 万次 Workflow 概括**和 **5000 次 Workflow 生成**。概括平均使用 **2500 个输入 Token 和 400 个输出 Token**，生成平均使用 **4500 个输入 Token 和 1800 个输出 Token**。Azure OpenAI Deployment 的配额为 **100 万 TPM 和 300 RPM**，服务侧再按租户限制并发，防止单个租户占满区域配额。
 

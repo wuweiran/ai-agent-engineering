@@ -11,7 +11,7 @@ permalink: /docs/career/copilot-insight-service/mail-rag/
 
 ## Query 检索链路
 
-`/insights/query` 接收自然语言 Query、绝对时间、稳定 Person ID 和当前邮件 Anchor。Insight Service 校验身份与参数后，将这些条件交给 Outlook Search，召回邮件候选，再执行对象级权限过滤、Conversation 去重和排序，最终向模型返回轻量候选。
+`/insights/query` 接收自然语言 Query、绝对时间、用户 UUID 和当前邮件 Anchor。Insight Service 校验身份与参数后，将这些条件交给 Outlook Search，召回邮件候选，再执行对象级权限过滤、Conversation 去重和排序，最终向模型返回轻量候选。
 
 ```text
 Query 与过滤条件
@@ -27,9 +27,9 @@ Query 阶段不读取所有邮件全文。候选只包含排序需要的元数�
 
 ## 用户身份与权限过滤
 
-用户在 Outlook 中登录后，Copilot Runtime 代表当前用户调用 Insight Service，并转发 Microsoft Entra ID 用户访问令牌。模型不能在 Tool Call 中填写 Tenant ID、User ID 或权限。Insight Service 验证令牌的签发方、Audience、有效期和 Scope，再从 Claims 中取得 Tenant ID 和 User Object ID。
+用户在 Outlook 中登录后，Copilot Runtime 代表当前用户调用 Insight Service，并转发 Microsoft Entra ID 用户 Token。模型不能在 Tool Call 中填写 Tenant ID、User ID 或权限。Insight Service 验证 Token 的签发方、Audience、有效期和 Scope，再从 Claims 中取得 Tenant ID 和 User Object ID。
 
-Insight Service 调用 Outlook Search 时使用 **On-Behalf-Of（OBO，代表用户）**流程，将上游用户令牌换成面向 Outlook 搜索服务的下游访问令牌。下游请求继续带着用户身份执行，而不是使用拥有全租户邮箱权限的应用身份。
+Insight Service 调用 Outlook Search 时使用 **On-Behalf-Of（OBO，代表用户）**流程，将上游用户 Token 换成面向 Outlook 搜索服务的下游 Token。下游请求继续带着用户身份执行，而不是使用拥有全租户邮箱权限的应用身份。
 
 ```text
 Outlook 用户登录
@@ -47,7 +47,7 @@ Outlook 用户登录
 
 第二层校验不能替代数据源授权，作用是防止错误路由、跨租户 ID、过期客户端 Anchor 或下游异常结果进入模型 Context。被过滤的对象不会以标题、Snippet、Citation 或命中数量暴露。
 
-稳定 Person ID 只用于匹配邮件的 From、To 和 Cc，不授予读取权限。即使模型传入其他租户或用户的 Person ID，最终仍只能搜索当前访问令牌有权读取的邮件。
+用户 UUID 只用于匹配邮件的 From、To 和 Cc，不授予读取权限。即使模型传入其他租户或用户的用户 UUID，最终仍只能搜索当前用户 Token 有权读取的邮件。
 
 ## 打分与排序
 
@@ -63,12 +63,14 @@ FinalScore =
 
 四个特征都归一化到 0～1：
 
-- **SearchRelevance**：Outlook Search 的原始相关性分数按离线标注集校准到 0～1；
+- **SearchRelevance**：Outlook Search 返回的邮件匹配分数，归一化到 0～1；
 - **Recency**：以请求结束时间为基准做时间衰减，越接近用户指定时间范围的末端分数越高；
-- **ParticipantMatch**：查询中的 Person ID 命中发件人得 1，命中 To 或 Cc 得 0.7，没有命中得 0；
+- **ParticipantMatch**：查询中的用户 UUID 命中发件人得 1，命中 To 或 Cc 得 0.7，没有命中得 0；
 - **AnchorRelation**：与当前邮件属于同一 Conversation 得 1，位于当前 Folder 得 0.5，没有界面 Anchor 关系得 0。
 
-搜索相关性占主要权重，其他特征只用于调整顺序，不能把语义不相关的邮件推到前面。权重通过带相关邮件标注的 Query 集调整，并按 Query 类型检查：人员查询不能只依赖时间，当前邮件追问也不能让 Anchor 完全压过 Query 相关性。
+这组权重不是在线学习得到的，也不会按用户动态变化。我们先准备多组候选权重，在同一份带相关性标注的 Query 开发集上分别运行，然后比较 [MRR、NDCG@12]({{ site.baseurl }}/docs/llm/rag/#rag-retrieval-evaluation)、Top 3 Hit Rate 和各类 Query 的结果，选择综合表现最好的一组。SearchRelevance 必须占主导，Recency、ParticipantMatch 和 AnchorRelation 只调整顺序；人员查询不能只依赖时间，当前邮件追问也不能让 Anchor 完全压过 Query 相关性。
+
+我负责 `/insights/query` 的特征设计、权重实验和发布。权重保存在带版本的服务配置中，可以独立调整和回滚，但每次修改都要重新运行离线评测并经过灰度发布，不会由线上请求自动调权。
 
 分数相同时，先选择发送时间较新的邮件，再使用 Message ID 做稳定排序，保证同一批候选重复执行时结果顺序一致。
 
@@ -130,4 +132,4 @@ Query 是只读操作，请求中途失败后不需要恢复原来的分页现�
 
 模型需要的是最相关证据，而不是操作搜索页码。如果把游标交给模型，它需要判断何时翻页、翻多少页，还会增加工具轮次、延迟和 Token。
 
-Insight Service 因此在一次调用中完成有界分页和 Top-K。只有搜索范围过宽或结果不足时，才通过 `partial` 和 `warnings` 返回原因，让模型缩小时间范围、补充 Person ID 或改写 Query 后发起新请求。延迟拆分、提前停止、连接池和缓存策略见 [Query 性能与缓存]({{ site.baseurl }}/docs/career/copilot-insight-service/performance/)。
+Insight Service 因此在一次调用中完成有界分页和 Top-K。只有搜索范围过宽或结果不足时，才通过 `partial` 和 `warnings` 返回原因，让模型缩小时间范围、补充用户 UUID 或改写 Query 后发起新请求。延迟拆分、提前停止、连接池和缓存策略见 [Query 性能与缓存]({{ site.baseurl }}/docs/career/copilot-insight-service/performance/)。

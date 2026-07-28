@@ -17,7 +17,7 @@ permalink: /docs/career/copilot-insight-service/
 
 ## 系统处在什么位置
 
-上游是 Outlook Copilot Runtime。Runtime 将 Insight Service 的能力注册为邮件查询、Conversation Context 和 Calendar Context 三个 Extension；每个 Extension 以 Tool Schema 暴露给模型，并由 Handler 映射到 Insight Service API。模型生成 Tool Call 后，Runtime 代表用户执行调用并附带访问令牌与 Outlook 界面 Context。模型直接提供绝对时间和稳定 Person ID，Insight Service 校验这些参数，访问邮件和日历，完成权限过滤、排序、去重和压缩后返回模型。
+上游是 Outlook Copilot Runtime。Runtime 将 Insight Service 的能力注册为邮件查询、Conversation Context 和 Calendar Context 三个 Extension；每个 Extension 以 Tool Schema 暴露给模型，并由 Handler 映射到 Insight Service API。模型生成 Tool Call 后，Runtime 代表用户执行调用并附带用户 Token与 Outlook 界面 Context。模型直接提供绝对时间和用户 UUID，Insight Service 校验这些参数，访问邮件和日历，完成权限过滤、排序、去重和压缩后返回模型。
 
 ```text
 Outlook Copilot 请求
@@ -30,13 +30,13 @@ Outlook Copilot 请求
 
 ## 接口与请求
 
-模型通过 Tool Call 使用 Insight Service，直接传入 Query、绝对时间和稳定 Person ID。Copilot Runtime 负责执行调用并附带访问令牌和 Outlook 界面 Context；候选数量和 Token 预算由 Insight Service 控制。
+模型通过 Tool Call 使用 Insight Service，直接传入 Query、绝对时间和用户 UUID。Copilot Runtime 负责执行调用并附带用户 Token 和 Outlook 界面 Context；候选数量和 Token 预算由 Insight Service 控制。
 
-对外接口只保留邮件 Query、Conversation Context 和 Calendar Context。已知 Message ID 或 Event ID 的详情由 Outlook 读取工具直接调用 Microsoft Graph API；人员 ID 由模型从已有人员或目录 Context 中取得，不由 Insight Service 解析姓名。具体请求与返回结构见 [接口与 Context 请求]({{ site.baseurl }}/docs/career/copilot-insight-service/context-api/)。
+对外接口只保留邮件 Query、Conversation Context 和 Calendar Context。已知 Message ID 或 Event ID 的详情由 Outlook 读取工具直接调用 Microsoft Graph API；用户 UUID 由模型从已有人员或目录 Context 中取得，不由 Insight Service 解析姓名。具体请求与返回结构见 [接口与 Context 请求]({{ site.baseurl }}/docs/career/copilot-insight-service/context-api/)。
 
 ## 主要工作
 
-团队共同维护 Insight Service 的邮件 Query、Conversation 和 Calendar Context。我的核心职责是 **`/insights/query` 的邮件检索链路**：将模型传入的 Query、绝对时间、稳定 Person ID 和当前邮件 Anchor 转成 Outlook Search 请求，完成分页召回、对象级权限过滤、Message 与 Conversation 去重、多特征打分和 Top-K 排序，最后返回 Message ID、Conversation ID、Snippet 和 Citation。
+团队共同维护 Insight Service 的邮件 Query、Conversation 和 Calendar Context。我的核心职责是 **`/insights/query` 的邮件检索链路**：将模型传入的 Query、绝对时间、用户 UUID 和当前邮件 Anchor 转成 Outlook Search 请求，完成分页召回、对象级权限过滤、Message 与 Conversation 去重、多特征打分和 Top-K 排序，最后返回 Message ID、Conversation ID、Snippet 和 Citation。
 
 Conversation 与 Calendar Context 由团队其他成员负责。我参与 `search_outlook_context` Extension 和 HTTP 契约，以及邮件对象级权限接入；Query 返回 Conversation ID 后，模型可以通过团队提供的 Conversation Extension 继续取得线程证据。
 
@@ -59,12 +59,21 @@ Conversation 与 Calendar Context 由团队其他成员负责。我参与 `searc
 
 这条链路可以深入到以下问题：
 
-- **Query 与召回**：怎样使用绝对时间、稳定 Person ID 和当前邮件 Anchor 生成 Outlook Search 条件；
+- **Query 与召回**：怎样使用绝对时间、用户 UUID 和当前邮件 Anchor 生成 Outlook Search 条件；
 - **分页与有界候选池**：怎样用游标分页处理大量命中，并限制单次请求的下游、内存和延迟成本；
 - **权限过滤**：怎样使用用户身份检索并再次校验候选对象，避免未授权标题、Snippet 和命中数量泄露；
 - **去重与排序**：怎样按 Message 和 Conversation 去重，并组合搜索分数、时间、邮件参与者匹配与 Anchor 关系选择 Top-K；
 - **返回与协作**：为什么 Query 只返回 Message ID、Conversation ID、Snippet 和 Citation，以及模型何时继续读取邮件或 Conversation；
 - **RAG 评测**：怎样评估 Recall@K、排序质量、权限泄露、Citation、P95/P99、下游请求量和 Token 成本。
+
+后端工程可以深入到：
+
+- **高并发 I/O**：WebFlux 和 WebClient 怎样在等待 Outlook Search 时不占住请求线程；
+- **有界资源**：怎样限制分页、候选数量、Top-K 内存、连接池和下游并发；
+- **超时与降级**：怎样在 3 秒 Deadline 内停止翻页并返回 `partial`，而不是让整个 Query 失败；
+- **限流与过载保护**：怎样按用户、租户和区域限流，并在 Outlook Search 返回 429 时降低并发；
+- **权限与缓存边界**：怎样完成用户 Token、OBO 和对象级校验，以及为什么只缓存 Token 和稳定配置，不缓存邮件结果；
+- **生产运行**：怎样处理区域路由、无状态扩缩容、阶段 Trace 和下游限流事故。
 
 Insight Service 同时属于大模型应用后端和 Agent 工具后端：它为以 Extension 形式注册的 Insight 工具提供后端实现，把实时、受权限控制的 Outlook 数据转换成 Tool Result，Runtime 再将结果放入模型 Context。
 

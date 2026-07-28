@@ -82,7 +82,7 @@ CPU、内存和磁盘告警都只说明某项资源异常，排查顺序仍然�
 
 [结构化日志]({{ site.baseurl }}/docs/interview/backend/performance-production/#structured-logging)中的稳定字段可以按支付方式、服务版本和错误类别聚合。日志中的“timeout”仍不能证明支付失败，它只说明这次调用没有及时得到结果。
 
-访问令牌、银行卡等敏感信息不能为了排查写入日志。订单 ID 和支付请求 ID 足以让有权限的人回到权威系统查询。
+Token、银行卡等敏感信息不能为了排查写入日志。订单 ID 和支付请求 ID 足以让有权限的人回到权威系统查询。
 
 ## Trace 定位跨组件耗时
 

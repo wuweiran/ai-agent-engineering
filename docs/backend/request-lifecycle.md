@@ -47,7 +47,7 @@ Web 框架根据 `POST /api/orders` 找到处理函数并解析 JSON，随后进
 
 后端先确认调用者是谁，再确认他能操作什么，这个过程通常统称为[鉴权]({{ site.baseurl }}/docs/interview/backend/security-auth/#authentication-authorization)。
 
-请求携带访问令牌。后端验证令牌后，从认证信息中取得当前身份：
+请求携带 Token。后端验证 Token 后，从认证信息中取得当前身份：
 
 ```text
 user_id: U-204

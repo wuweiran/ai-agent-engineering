@@ -16,7 +16,7 @@ permalink: /docs/interview/backend/security-auth/
 ## 认证、授权和鉴权有什么区别？
 {: #authentication-authorization }
 
-- **认证（Authentication）**：确认调用者是谁，例如验证密码、Session 或访问令牌；
+- **认证（Authentication）**：确认调用者是谁，例如验证密码、Session 或Access Token；
 - **授权（Authorization）**：判断该身份能否对特定资源执行特定操作；
 - **鉴权**：工程中常作为认证和授权的统称，但排查问题时仍要分清身份无效和权限不足。
 
@@ -37,7 +37,7 @@ permalink: /docs/interview/backend/security-auth/
 - **服务端 Session**：便于立即撤销、控制并发登录和保存认证状态；代价是多实例需要共享或路由会话；
 - **JWT**：各服务可以本地验签，减少认证服务查询；代价是难以即时撤销，权限变化后旧令牌仍可能有效。
 
-选择重点是**撤销要求、扩展方式、数据敏感度和客户端类型**。内部系统和高风险业务通常更看重集中控制；跨服务 API 可以使用短期访问令牌。JWT 不是天然更先进。
+选择重点是**撤销要求、扩展方式、数据敏感度和客户端类型**。内部系统和高风险业务通常更看重集中控制；跨服务 API 可以使用短期Access Token。JWT 不是天然更先进。
 
 ## JWT 的结构是什么？签名代表什么？
 {: #jwt-structure-signature }
@@ -66,7 +66,7 @@ JWT 通常由三部分组成：
 ## JWT 怎样实现注销和权限变更后失效？
 {: #jwt-revocation }
 
-常见做法是缩短 Access Token 生命周期，配合可撤销的 Refresh Token；高风险场景可以维护撤销列表、用户令牌版本或会话状态。
+常见做法是缩短 Access Token 生命周期，配合可撤销的 Refresh Token；高风险场景可以维护撤销列表、用户 Token 版本或会话状态。
 
 完全无状态的长效 JWT 很难即时撤销。权限变化的生效速度、每次查询认证服务的成本和系统可用性之间需要取舍。
 
@@ -232,7 +232,7 @@ HTTPS 保护传输中的机密性、完整性和服务器身份，防止普通�
 ## 用户修改权限后，旧 Token 仍能访问怎么办？
 {: #permission-change-token-revocation }
 
-缩短 Access Token 有效期，使权限变化在可接受窗口内生效；高风险操作可以实时查询权限或校验用户令牌版本。Refresh Token 应撤销或轮换，防止继续换取旧权限令牌。
+缩短 Access Token 有效期，使权限变化在可接受窗口内生效；高风险操作可以实时查询权限或校验用户 Token 版本。Refresh Token 应撤销或轮换，防止继续换取旧权限的 Access Token。
 
 需要即时撤销时，系统就不能保持完全无状态，必须引入会话、撤销列表或集中策略检查。
 
