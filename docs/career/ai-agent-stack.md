@@ -41,9 +41,9 @@ permalink: /docs/career/ai-agent-stack/
 | 技术层 | 覆盖项目 | 使用的内部或实际技术 | 我的工作 |
 | --- | --- | --- | --- |
 | 固定 Workflow 与模型调用 | Microsoft Purview 工作流 | Azure Logic Apps、Workflow Definition、Scala + ZIO、Azure OpenAI Chat Completions、GPT-3.5 Turbo | Expression 领域 Owner；定义 EBNF、AST、Validator 和 Evaluator；接入 Workflow 概括与 Definition 生成 |
-| Prompt 与结构化输出 | Purview；Outlook Copilot Agent | System Prompt、Few-shot、Action Catalog、JSON Validator；Agent Instructions、Capability Prompt、工具 Description | 组装模型输入、限制可用能力、验证模型输出；按 Outlook 场景拆分 Prompt 并处理工具结果 |
-| RAG 与 Context | Outlook Copilot Insight Service；Outlook Copilot Agent | Outlook Search、Microsoft Graph、OBO、搜索型 RAG、分页召回、Top 12、Citation、Side Panel Context | 负责 `/insights/query` 的邮件召回、权限过滤、去重和排序；设计当前邮件、选区、附件与 Folder Context |
-| Agent Runtime | Outlook Copilot Agent | Microsoft 365 Copilot Declarative Agent 平台、Agent Definition、Conversation、Planning、Confirmation、Trace | 在平台已有 Runtime 上配置能力和行为；没有自建模型循环、Planning 或确认服务 |
+| Prompt 与结构化输出 | Purview；Outlook Copilot Agent | System Prompt、Few-shot、Action Catalog、JSON Validator；Agent Instructions、场景 Instructions、工具 Description | 组装模型输入、限制可用能力、验证模型输出；按 Outlook 场景拆分 Prompt 并处理工具结果 |
+| RAG 与 Context | Outlook Copilot Insight Service；Outlook Copilot Agent | Outlook Search、Microsoft Graph、OBO、搜索型 RAG、分页召回、Top 12、Citation、Sydney Context Config | 负责 `/insights/query` 的邮件召回、权限过滤、去重和排序；配置各场景需要的当前邮件、选区、附件与 Folder Context |
+| Agent Runtime | Outlook Copilot Agent | Microsoft 365 Copilot Declarative Agent 平台、Agent Definition、Conversation、Planning、Confirmation、Trace | 在 Microsoft 365 Copilot 已有 Runtime 上配置能力和行为；没有自建模型循环、Planning 或确认服务 |
 | Tool Calling | Insight Service；Outlook Copilot Agent | Copilot Extension、Tool Schema、Tool Call / Tool Result、附件提取、邮件搜索与写入工具 | 参与搜索 Extension 契约；设计场景工具集合、Description、参数语义和错误后的 Agent 行为 |
 | 多轮状态与任务执行 | Outlook Copilot Agent | 平台 Conversation 与 Plan、结构化任务约束、资源版本、Operation ID | 处理用户修改范围、重新计划、部分成功、结果未知和任务终止；没有建设跨任务长期记忆 |
 | 安全与权限 | Insight Service；Outlook Copilot Agent | Microsoft Entra ID、OBO、`Mail.Read` / `Mail.ReadWrite`、对象级权限、平台确认 | 实现或接入权限过滤；限制工具可见性，确保写操作走确认和 Extension 校验 |
@@ -55,10 +55,10 @@ permalink: /docs/career/ai-agent-stack/
 
 ```text
 用户与产品入口
-└─ Outlook Side Panel
+└─ Microsoft 365 Copilot 网页或 Outlook 入口
    └─ Outlook Copilot Agent 能力开发
-      ├─ Instructions、Capability Prompt 与 Side Panel Context
-      ├─ Microsoft 365 Copilot 平台负责 Runtime、Planning 和确认
+      ├─ Instructions、API Plugin 与 Sydney Context Config
+      ├─ Microsoft 365 Copilot 负责 Runtime、Planning 和确认
       └─ Extension 工具
          ├─ Insight Service：邮件搜索型 RAG
          ├─ 附件提取
@@ -80,13 +80,13 @@ permalink: /docs/career/ai-agent-stack/
 | --- | --- | --- |
 | 直接调用模型 API | 单次生成、抽取、总结和结构化输出 | Purview 通过 Azure OpenAI Chat Completions 实现概括和 Workflow Definition 生成 |
 | 固定 Workflow + LLM | 程序决定步骤，模型处理局部非确定任务 | Purview 使用 Logic Apps 调度，模型只负责概括或生成 Definition 草稿 |
-| LangChain | 用代码组合 Model、Prompt、Retriever、Tool 和 Agent | 没有在这些项目中使用；同类职责由 Microsoft 365 Copilot 平台、Extension 和业务代码承担 |
-| LangGraph | 显式状态图、条件分支、检查点和恢复 | 没有在这些项目中使用；Purview 的确定流程由 Logic Apps 承担，Outlook Agent 的 Planning 和 Conversation 由 Copilot 平台承担 |
+| LangChain | 用代码组合 Model、Prompt、Retriever、Tool 和 Agent | 没有在这些项目中使用；同类职责由 BizChat、Extension 和业务代码承担 |
+| LangGraph | 显式状态图、条件分支、检查点和恢复 | 没有在这些项目中使用；Purview 的确定流程由 Logic Apps 承担，Outlook Agent 的 Planning 和 Conversation 由 Microsoft 365 Copilot Agent Runtime 承担 |
 | Dify | 可视化构建 Workflow、RAG 和 Agent 应用 | 没有使用；微软项目采用内部平台和产品集成 |
 | 自建 Agent Runtime | 自己实现模型循环、工具调度、状态和终止 | 没有自建；Outlook 使用 Microsoft 365 Copilot Declarative Agent 平台 |
 | MCP | 标准化连接外部工具和资源 | Outlook 项目使用 Copilot Extension，不使用 MCP；两者解决的都是能力接入，但协议和平台不同 |
 | 向量 RAG | Chunk、Embedding、向量索引和 Rerank | 知识上覆盖，但 Insight Service 实际采用 Outlook Search 的搜索型 RAG，不使用 Chunk、Embedding 或向量数据库 |
-| vLLM / Ollama | 生产 GPU 推理或本地模型运行 | 没有负责模型推理部署；Purview 使用 Azure OpenAI，Outlook 使用 Copilot 平台模型服务 |
+| vLLM / Ollama | 生产 GPU 推理或本地模型运行 | 没有负责模型推理部署；Purview 使用 Azure OpenAI，Outlook 使用 BizChat 的模型服务 |
 | Multi-Agent / A2A | 多个独立 Agent 分工和通信 | 没有使用；Outlook 三项能力属于同一个通用 Agent |
 
 ## 面试问题怎样映射

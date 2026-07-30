@@ -23,7 +23,7 @@ permalink: /docs/career/copilot-capabilities/mailbox-organization/
 动作计划 → 用户确认 → 权限和版本检查 → 写操作 → 逐项结果
 ```
 
-Microsoft 365 Copilot 平台负责 Conversation、Planning 和确认，已有邮件 Extension 负责权限、资源版本与幂等执行。我的工作是配置 Agent Instructions、Context、可用工具和错误后的后续行为，把两段连接起来。
+Microsoft 365 Copilot Agent Runtime 负责 Conversation、Planning 和确认，已有邮件 Extension 负责权限、资源版本与幂等执行。我的工作是配置 Agent Instructions、Context、可用工具和错误后的后续行为，把两段连接起来。
 
 ## 一次完整任务
 

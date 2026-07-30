@@ -11,29 +11,30 @@ permalink: /docs/career/copilot-capabilities/
 
 ## 项目是什么
 
-Outlook Copilot 是运行在 Side Panel 中的通用 Agent，基于 Microsoft 365 Copilot 的 Declarative Agent 平台实现。我在同一个 Agent 中交付了划词解释、附件总结和邮箱整理三项能力，没有为每项能力分别建设 Agent 或模型服务。
+项目基于 Microsoft 365 Copilot 的 **Declarative Agent** 扩展形态实现，通过 Sydney API 接入 BizChat。网页和 Outlook 内入口共用同一套 Agent Definition、Context Config 和 Extension；我在这个 Agent 中交付了划词解释、附件总结和邮箱整理三项能力。
 
-客户端提供当前邮件、选区、附件或文件夹等界面信息。平台加载 Agent Instructions 和当前场景允许的 Extension，再由模型直接回答或发起 Tool Call。附件提取、邮件搜索和邮件写入均由已有 Extension 完成。
+Sydney Context Config 决定每次请求携带哪些当前邮件、选区、附件、文件夹和入口类型。Declarative Agent 的同一个 `instructions` 字段根据这些信息区分场景并定义行为规则；`actions` 引用 Outlook API Plugin，Plugin Manifest 定义全局可用工具的 Description、参数和后端 Runtime。Microsoft 365 Copilot Agent Runtime 将这些内容一起交给模型，由模型直接回答或生成 Tool Call。
 
 ```text
-Outlook Side Panel
-→ Agent Instructions 与当前场景 Context
-→ Microsoft 365 Copilot 平台
+Microsoft 365 Copilot 网页或 Outlook 入口
+→ Sydney Payload 与当前场景 Context
+→ BizChat 后端接口
+→ Microsoft 365 Copilot Agent Runtime
 → 已有 Extension
 → 回答或邮件操作结果
 ```
 
 ## 主要工作
 
-我负责三项能力的 Agent Definition、场景 Prompt、Side Panel Context 和 Extension 接入，定义模型什么时候直接回答、什么时候调用搜索或读取工具，以及不同 Tool Result 返回后怎样继续。功能上线前使用 Trace 排查问题，并通过 Golden Set 回归和 Ring 灰度发布。
+我负责三项能力的 Agent Definition、场景 Prompt、Sydney Context Config 和 Extension 接入，定义每个场景需要哪些 Context、模型什么时候直接回答或调用工具，以及不同 Tool Result 返回后怎样继续。Context 采集代码由 Sydney 接入层同事维护。功能上线前使用 Trace 排查问题，并通过 Golden Set 回归和 Ring 灰度发布。
 
-平台负责模型循环、Conversation、Planning、确认和流式输出；Extension 团队负责工具后端、权限、资源版本和幂等执行，这些不属于我的实现范围。
+Microsoft 365 Copilot Agent Runtime 负责模型循环、Conversation、Planning、确认和流式输出；Extension 团队负责工具后端、权限、资源版本和幂等执行，这些不属于我的实现范围。
 
 ## 三项能力
 
 | 能力 | 实现方式 | 项目工作 |
 | --- | --- | --- |
-| 划词解释 | 选区加固定 Prompt 直接生成 | 控制选区 Context、回答范围和 Citation |
+| 划词解释 | 选区加固定 Prompt 直接生成 | 配置选区 Context、回答范围和 Citation |
 | 附件总结 | 调用附件提取 Extension 后生成 | 处理提取结果、不完整内容和来源引用 |
 | 邮箱整理 | 搜索、按需读取、计划确认后调用写工具 | 处理模糊目标、多轮修改和执行失败 |
 

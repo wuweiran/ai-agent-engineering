@@ -17,25 +17,21 @@ permalink: /docs/career/copilot-capabilities/incident-tool-routing/
 
 ## 定位
 
-排查时选择相同划词解释 Query 对比新旧 Agent 版本。Side Panel Context、模型版本和 Extension 版本没有变化，第一次差异出现在模型首轮决策。
+排查时选择相同划词解释 Query 对比新旧 Agent 版本。Sydney 注入的 Context、模型版本和 Extension 版本没有变化，第一次差异出现在模型首轮决策。
 
-问题由三个简单配置共同造成：
+问题由三处规则共同造成：
 
-1. 通用 Instructions 中的搜索条件写得太宽；
-2. 划词解释场景仍然暴露邮箱搜索工具；
-3. 搜索工具 Description 没有说明它不适用于已知选区和当前 Message。
+1. 通用 `instructions` 中的搜索条件写得太宽；
+2. Sydney 已经注入选区和入口类型，但场景规则没有明确优先使用选区；
+3. 搜索 Function Description 没有说明它不适用于已知选区和当前 Message。
 
 因此问题不在 Insight Extension，也不需要更换模型。
 
 ## 修复
 
-Ring 先切回上一版 Agent Definition。新版本做了三项修改：
+Ring 先切回上一版 Agent Definition。新版本按 `entryType=selection` 增加明确分支：以 `selectedText` 为主要对象，`surroundingParagraphs` 只用于局部语义；除非用户明确要求查找或比较其他邮件，否则不调用搜索。Context Config 删除完整邮件正文、Conversation 历史和附件列表，只保留选区、前后段落和必要邮件元数据；搜索 Function Description 同时补充“不用于解释选区或重新读取已知 Message ID”。具体规则见[一次根据评测完成的优化]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#evaluation-driven-optimization)。
 
-- 把搜索规则移回开放问答和邮箱整理的 Capability Prompt；
-- 从划词解释的工具列表中移除邮箱搜索和写工具；
-- 在搜索工具 Description 中补充“用于发现未知邮件，不替代当前选区或已知 Message ID”。
-
-这次修改也减少了无关工具 Schema。划词解释平均输入从 **12,400 Token 降到 7,600 Token**，下降约 **39%**。
+Context 缩减后，划词解释平均输入从 **12,400 Token 降到 7,600 Token**，下降约 **39%**。
 
 ## 回归
 
@@ -45,4 +41,4 @@ Ring 先切回上一版 Agent Definition。新版本做了三项修改：
 
 ## 结论
 
-这次问题没有采用继续追加全局禁令的方式解决，而是把规则放回具体场景，并从简单场景中直接移除不需要的工具。对明确入口来说，缩小工具集合比要求模型每次自行判断“不该搜索”更稳定。
+这次问题没有继续追加模糊的全局禁令，而是利用入口类型把规则放回具体场景，并收紧搜索 Function Description。对明确入口来说，清楚说明 Context 优先级和工具适用边界，比让模型从通用规则中自行推断更稳定。
