@@ -26,6 +26,35 @@ permalink: /docs/interview/ai-agent/quality-production/
 
 相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)、[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
 
+## 生产级 Agent 架构怎样设计？
+{: #production-agent-architecture }
+
+**生产级 Agent 的重点不是固定分成六个微服务，而是把入口控制、模型决策、确定性执行、权威状态和质量闭环分开。**一种常见分层是：
+
+1. **接入与网关**：完成认证、租户隔离、限流、配额、请求 ID、会话路由和流式连接；
+2. **Runtime 与编排**：组装 Context，驱动模型与 Tool Call 循环，管理 Planning、预算、确认、取消、超时和终止；Planner 与 Executor 可以是这一层的模块，不必各自成为服务；
+3. **模型网关**：统一封装模型供应商、版本、路由、降级、Token 统计、Prompt Cache 和并发配额；
+4. **工具与业务集成**：通过明确的名称、Description 和参数 Schema 暴露业务能力，执行时重新鉴权、校验业务状态，并处理幂等和结果未知；
+5. **状态、Context 与 Memory**：分别保存 Conversation、Task/Run/Step、Tool Call、短期工作集和长期记忆。Context 可以压缩重建，业务状态必须由数据库或领域系统负责；
+6. **结果处理与安全**：校验结构化结果、Citation 和工具状态，过滤敏感信息，区分成功、部分成功与结果未知，再生成用户响应。它通常属于 Runtime 或领域服务，不一定需要独立的 Aggregator；
+7. **异步执行与生产闭环**：长任务使用持久队列和 Worker；Metrics、Log、Trace 串联整个链路，并通过离线评测、灰度发布、告警和回滚形成闭环。
+
+一次请求可以概括为：
+
+```text
+Gateway 接收请求
+→ Runtime 读取状态并组装 Context
+→ Model Gateway 调用模型
+→ Runtime 校验并执行 Tool Call
+→ 领域服务提交真实业务结果
+→ Runtime 保存状态并校验最终输出
+→ SSE/HTTP 返回结果
+```
+
+设计时先确认四个问题：**权威业务状态在哪里、哪些动作有副作用、超时后怎样判断真实结果、系统如何恢复**。Memory、Aggregator 和 Planner 都是职责名称，不应为了架构图完整就强行拆成独立服务。
+
+相关内容：[Agent Harness](#agent-harness)、[Agent 状态与记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-state-and-memory)、[工具调用后端链路]({{ site.baseurl }}/docs/interview/backend/llm-application-backend/#tool-call-backend-flow)、[Agent 评测](#agent-evaluation)。
+
 ## Prompt Injection 怎样防御？
 {: #prompt-injection-defense }
 

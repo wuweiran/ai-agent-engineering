@@ -195,6 +195,9 @@ AI Agent 岗位既考查模型与 RAG 等应用基础，也考查 Runtime、工�
 ### [什么是 Agent Harness？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-harness)
 {: #agent-harness }
 
+### [生产级 Agent 架构怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#production-agent-architecture)
+{: #production-agent-architecture }
+
 ### [Prompt Injection 怎样防御？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#prompt-injection-defense)
 {: #prompt-injection-defense }
 
