@@ -49,7 +49,7 @@ permalink: /docs/interview/backend/
 
 - **跨越请求的异步工作与 Kafka**
   - **[消息队列与 Kafka]({{ site.baseurl }}/docs/interview/backend/message-queue/)**：异步、削峰、解耦，At Most Once、At Least Once、消费幂等、消息顺序、延迟消息、本地消息表、死信队列、消息积压
-  - **Kafka 专项**：Broker、Topic、Partition、Replica、Partition Key、Consumer Group、Rebalance、Offset、Leader、Follower、ISR、`acks`、`min.insync.replicas`、幂等生产者、Kafka 事务
+  - **Kafka 专项**：Broker、Topic、Partition、Replica、Partition Key、Consumer Group、Rebalance、Offset、消息不丢、Leader、Follower、ISR、`acks`、`min.insync.replicas`、幂等生产者、Kafka 事务
   - 这一层回答：**请求结束后，未完成工作怎样继续，以及消息重复、丢失、乱序时怎样恢复。**
 
 - **跨服务与多节点协调**

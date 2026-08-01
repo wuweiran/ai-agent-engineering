@@ -96,7 +96,7 @@ Tenant、User、Token 和服务端候选上限不让模型填写，由 BizChat �
 
 较早对话不会无限保留原文。项目保留当前用户目标、已确认条件、资源 ID、计划和执行结果，已经被新结果替代的 Tool Result 从下一轮删除。邮件和附件仍保存在 Outlook，需要核实时重新读取。
 
-超过当前模型预算时，先删除旧 Tool Result 和重复引用，再缩短较早对话；单条邮件过长时才截断，并把结果标记为 `truncated` 或 `partial`。删除已被邮件详情替代的搜索候选和旧 Tool Result 后，多轮邮箱整理累计输入从 **46,000 Token 降到 34,000 Token**，下降 **26%**。
+超过当前模型预算时，先删除旧 Tool Result 和重复引用，再缩短较早对话；单条邮件过长时才截断，并把结果标记为 `truncated` 或 `partial`。删除已被邮件详情替代的搜索候选和旧 Tool Result 后，每条多轮邮箱整理 Scenario 中所有模型调用的平均总输入从 **46,000 Token 降到 34,000 Token**，下降 **26%**。
 
 ## 一次根据评测完成的优化
 {: #evaluation-driven-optimization }
@@ -140,7 +140,7 @@ Search Outlook to discover emails that are not already identified in the current
 Do not use this function to explain selected text or to reread a known Message ID.
 ```
 
-修复后，80 条专项 Query 不再误调搜索；划词解释平均输入从 **12,400 Token 降到 7,600 Token**，下降 **39%**。随后运行三项功能的全量 Golden Set，`lm_checklist` 和 Citation 没有下降，版本才重新进入 Ring。
+修复后，80 条专项 Query 不再误调搜索；每条 Query 中所有模型调用的平均总输入从 **12,400 Token 降到 7,600 Token**，下降 **39%**。随后运行三项功能的全量 Golden Set，`lm_checklist` 和 Citation 没有下降，版本才重新进入 Ring。
 
 ## 评测与定位
 

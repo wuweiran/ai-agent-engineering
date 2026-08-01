@@ -47,4 +47,4 @@ Agent 不强制执行旧计划，而是重新读取冲突邮件。已经不存�
 
 相同错误连续出现且没有新信息时停止，不让模型反复调用同一个工具。错误分布和重复 Tool Call 通过平台 Trace 观察，具体服务恢复仍由 Extension 团队负责。
 
-工具选择与执行结果通过 `tool_call` 回归，当前基线为 **93.8%**。完整的邮箱整理恢复链路见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)。
+工具选择和关键参数通过 `tool_call` 回归，当前基线为 **93.8%**。它不表示 Extension 接口执行成功率；实际执行状态从 Tool Result 中取得，Agent 是否正确处理该状态再由对应 Assertion 检查。完整的邮箱整理恢复链路见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)。

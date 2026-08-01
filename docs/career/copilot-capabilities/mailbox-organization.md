@@ -82,7 +82,7 @@ Insight Query 先返回 Top 12 轻量候选，包括 Message ID、Conversation I
 
 | Metric | 基线 |
 | --- | ---: |
-| `lm_checklist` | 87.6% |
+| `lm_checklist` | 84.7%（61 / 72，邮箱整理任务通过率） |
 | `tool_call` | 93.8% |
 | `safety` | 0.0% |
 | `latency_p95` | 7.4 秒 |

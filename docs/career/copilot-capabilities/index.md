@@ -52,7 +52,7 @@ Microsoft 365 Copilot Agent Runtime 负责模型循环、Conversation、Planning
 
 ## 结果
 
-三项能力进入同一个 Outlook Declarative Agent。一次 Context 优化后，划词解释的平均输入从 **12,400 Token 降到 7,600 Token**；多轮邮箱整理 Scenario 的累计输入从 **46,000 Token 降到 34,000 Token**。当前评测基线中，`lm_checklist` 为 **87.6%**、`tool_call` 为 **93.8%**，严重安全违规为 **0**。
+三项能力进入同一个 Outlook Declarative Agent。`lm_checklist` 按功能切片后的任务通过率分别为：划词解释 **92.5%**、附件总结 **89.2%**、邮箱整理 **84.7%**，严重安全违规为 **0**。在任务质量不下降的前提下，一次 Context 优化把划词解释每条 Query 的平均总输入从 **12,400 Token 降到 7,600 Token**，把多轮邮箱整理每条 Scenario 的平均总输入从 **46,000 Token 降到 34,000 Token**。这里的总输入是一次完整评测任务中所有模型调用的输入 Token 之和。
 
 ## 项目文档
 

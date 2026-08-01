@@ -265,6 +265,18 @@ Rebalance 会暂停或移动部分消费任务，未及时提交的记录可能�
 
 当 ISR 数低于最小要求时，Broker 会拒绝写入，以可用性换取数据可靠性。副本数、最小同步副本和故障容忍能力必须一起设计。
 
+## Kafka 怎样保证消息不丢？
+{: #kafka-message-loss-prevention }
+
+**Kafka 不能靠一个参数保证端到端绝不丢，必须同时处理生产、Broker 存储和消费三个阶段。**
+
+1. **生产端**：使用 `acks=all`、有限重试和幂等生产者，发送失败不能直接忽略；数据库提交到 Kafka 发送之间的故障窗口，再用本地消息表处理；
+2. **Broker 端**：配置足够的副本数和 `min.insync.replicas`，只在 ISR 数量满足要求时接受写入，并避免从未同步副本中强行选举 Leader；
+3. **消费端**：关闭不受业务完成点控制的自动提交，业务处理成功后再提交 Offset。提交前崩溃会导致重复消费，因此消费者必须幂等；
+4. **监控与补偿**：监控生产失败、ISR 缩减、Under-Replicated Partition、Consumer Lag 和死信，并通过对账发现业务事件缺失。
+
+常见配置是副本数为 3、`min.insync.replicas=2`、生产者使用 `acks=all`。这样一个副本故障时仍可写入；如果同步副本不足，Kafka 会拒绝写入，而不是冒险确认。最终语义通常是 **At Least Once + 业务幂等**：尽量不丢，但允许重复。
+
 ## Kafka 幂等生产者解决什么问题？
 {: #kafka-idempotent-producer }
 

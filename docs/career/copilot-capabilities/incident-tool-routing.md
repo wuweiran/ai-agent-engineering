@@ -31,7 +31,7 @@ permalink: /docs/career/copilot-capabilities/incident-tool-routing/
 
 Ring 先切回上一版 Agent Definition。新版本按 `entryType=selection` 增加明确分支：以 `selectedText` 为主要对象，`surroundingParagraphs` 只用于局部语义；除非用户明确要求查找或比较其他邮件，否则不调用搜索。Context Config 删除完整邮件正文、Conversation 历史和附件列表，只保留选区、前后段落和必要邮件元数据；搜索 Function Description 同时补充“不用于解释选区或重新读取已知 Message ID”。具体规则见[一次根据评测完成的优化]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#evaluation-driven-optimization)。
 
-Context 缩减后，划词解释平均输入从 **12,400 Token 降到 7,600 Token**，下降约 **39%**。
+Context 缩减后，每条划词解释 Query 中所有模型调用的平均总输入从 **12,400 Token 降到 7,600 Token**，下降约 **39%**。
 
 ## 回归
 

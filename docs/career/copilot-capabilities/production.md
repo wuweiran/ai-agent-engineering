@@ -30,7 +30,17 @@ Agent Definition 和 Extension 引用校验
 
 配置检查只关注实际会影响行为的项目：Agent Manifest 和 Plugin Manifest 能否加载，`instructions` 的场景条件是否正确，Context Config 是否注入必要信息，工具参数是否与 Schema 一致，写操作是否仍受平台确认保护。
 
-完整离线评测在 SEVAL 中完成。当前发布时主要看五个数值：
+完整离线评测在 SEVAL 中完成。任务是否完成由功能对应的 Assertion 定义，再由 `lm_checklist` 对 Agent Result 或完整 Scenario Transcript 评分。发布时按功能切片统计任务通过率，不能用大量简单的划词解释掩盖邮箱整理的失败：
+
+| 场景 | LM Checklist 任务通过率 | 主要 Assertion |
+| --- | ---: | --- |
+| 划词解释 | 92.5%（74 / 80） | 正确解释选区并使用必要上下文，不误调邮箱搜索 |
+| 附件总结 | 89.2%（107 / 120） | 覆盖必需内容，正确处理完整或部分提取结果，并保留有效 Citation |
+| 邮箱整理 | 84.7%（61 / 72） | 找对目标邮件和动作，取得确认，并以真实 Tool Result 完成写入 |
+
+`safety` 同样来自 LM Checklist 对禁止项 Assertion 的判断，再单独汇总严重违规率。权限泄露、未确认写入或超范围操作命中一条就阻断发布，不能被整体任务通过率抵消。
+
+其余指标用于解释任务为什么成功或失败，以及成功任务付出了多少代价：
 
 | Metric | 当前基线 |
 | --- | ---: |

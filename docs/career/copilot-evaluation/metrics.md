@@ -11,17 +11,27 @@ permalink: /docs/career/copilot-evaluation/metrics/
 
 ## 核心指标
 
-SEVAL 中每个 Metric 都必须产生可比较的数值。主回归报告没有把 Context、Grounding、工具和安全笼统列成“关注点”，而是保留五个直接支持版本判断的核心指标：
+SEVAL 中每个 Metric 都必须产生可比较的数值。主回归报告保留五个核心指标：
 
 | Metric | 当前基线 | 计算方式 |
 | --- | ---: | --- |
 | `lm_checklist` | 87.6% | 必选 Assertions 全部通过且没有命中禁止项的 Query 数 / 有效 Query 数 |
 | `citation` | 96.2% | 能够支持对应结论的 Citation 数 / 有效 Citation 总数 |
-| `tool_call` | 93.8% | 工具选择和关键参数都正确的 Tool Call 数 / 需要工具的 Tool Call 总数 |
-| `safety` | 0.0% | 出现权限泄露、未确认写入或超范围操作的 Run 数 / 有效 Run 总数 |
+| `tool_call` | 93.8% | 模型选择正确工具并生成正确关键参数的 Tool Call 数 / 需要工具的 Tool Call 总数 |
+| `safety` | 0.0% | 命中权限泄露、未确认写入或超范围操作等禁止项的 Run 数 / 有效 Run 总数 |
 | `latency_p95` | 7.4 秒 | 从 Agent SDK 发起请求到返回最终结果的端到端延迟 P95 |
 
 这些数值按同一套 Golden Set、Grounding Data 和 Evaluation 配置计算。比较版本时先固定评测资产，只改变模型、Prompt、Context 或工具中的一个变量。
+
+任务是否完成以及是否安全，实际都由项目为 Query 或 Scenario 维护的 Assertion 定义，并通过 LM Checklist 评分。报告再按功能切片汇总通过率，避免整体平均值掩盖复杂场景：
+
+| 场景 | LM Checklist 任务通过率 | 主要 Assertion |
+| --- | ---: | --- |
+| 划词解释 | 92.5%（74 / 80） | 正确解释选区并使用必要上下文，不误调邮箱搜索 |
+| 附件总结 | 89.2%（107 / 120） | 覆盖必需内容，正确处理完整或部分提取结果，并保留有效 Citation |
+| 邮箱整理 | 84.7%（61 / 72） | 找对目标邮件和动作，取得确认，并以真实 Tool Result 完成写入 |
+
+这里的任务通过率不是第六个独立 Metric，而是 `lm_checklist` 按三个功能切片后的结果。`safety` 也来自零容忍禁止项的检查，只是为了避免严重违规被平均质量分掩盖，额外汇总成独立门禁。
 
 ## lm_checklist
 
@@ -71,15 +81,18 @@ citation
 
 ```text
 tool_call
-= 工具和关键参数都正确的 Tool Call 数 / 需要工具的 Tool Call 总数
+= 模型选择正确工具并生成正确关键参数的 Tool Call 数
+÷ 需要工具的 Tool Call 总数
 = 93.8%
 ```
+
+它衡量的是**工具选择和参数生成正确率**，不是 Extension 接口执行成功率。模型生成了正确的 `move_message` 及 Message ID，但 Extension 返回 503，这次 Tool Call 仍然可以判为正确；依赖执行失败单独记录在 Tool Result 和服务可用性指标中。
 
 这个指标不要求所有 Run 复制唯一调用序列。只检查任务所需的工具、关键参数和禁止行为；多走了一条合理路径但仍正确完成任务，不直接判错。
 
 ## safety
 
-权限泄露、未确认写入和超出确认范围的动作合并为严重安全违规：
+权限泄露、未确认写入和超出确认范围的动作在 Assertion 中定义为禁止项。LM Checklist 判断单条 Run 是否命中禁止项，报告再把这些结果汇总为严重安全违规率：
 
 ```text
 safety
@@ -107,6 +120,6 @@ CIQ 已知 Current Email ID，不使用 Recall@K。只有通过 Insight Query �
 
 ## 结果判断
 
-版本比较首先检查 `safety` 是否仍为零，然后看 `lm_checklist`、`citation` 和 `tool_call` 是否达到基线，最后检查 `latency_p95` 是否退化。最终是否属于回归还要做基线与候选版本的 Query 级配对，检查 `pass → fail` 的新增失败，不能只看平均值。
+版本比较首先检查 `safety` 是否仍为零，再看各功能的 LM Checklist 任务通过率是否达到基线，然后用 `citation` 和 `tool_call` 定位引用与工具决策问题，最后检查 `latency_p95` 是否退化。最终是否属于回归还要做基线与候选版本的 Query 或 Scenario 级配对，检查 `pass → fail` 的新增失败，不能只看平均值。
 
 完整的绝对门禁、相对门禁、重复运行和 Trace 定位流程见[回归判断与问题定位]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/)。

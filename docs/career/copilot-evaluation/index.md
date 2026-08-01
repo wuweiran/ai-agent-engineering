@@ -39,7 +39,7 @@ Assertion = 针对该邮件证据的必须覆盖事实和禁止项
 Query Set + Grounding Data + Assertion
 → SEVAL 运行固定版本的评测资产和待测 Agent
 → lm_checklist、citation、tool_call、safety、latency_p95
-→ Baseline / Candidate 配对比较，并沿 Trace 定位新增失败
+→ 按功能汇总任务通过率，配对比较 Baseline / Candidate，并沿 Trace 定位新增失败
 ```
 
 Query、邮件或 Assertion 变化时发布新的资产版本；比较 Agent、模型、Prompt、Context 或工具版本时固定评测资产。功能切片先验证当前修改，全量 Golden Set 再检查跨功能回归。
