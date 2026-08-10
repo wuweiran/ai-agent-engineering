@@ -13,7 +13,7 @@ permalink: /docs/career/copilot-capabilities/
 
 Outlook 用户阅读邮件时，经常需要解释局部内容、总结附件，或者继续搜索和整理相关邮件。这个项目的目标不是再做一个通用聊天入口，而是让用户留在当前邮件场景中完成“理解内容—取得证据—执行动作”的任务。我基于 Microsoft 365 Copilot 的 [Declarative Agent 框架]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#declarative-agent-configuration)，从零开发了划词解释、附件总结和邮箱整理三个场景。
 
-Microsoft 365 Copilot 提供模型循环、Conversation、Planning 和确认。为了实现这三个场景，我完成了 Agent Definition、场景 Instructions、Sydney Context Config 和 Extension 接入。具体设计包括：[Prompt/Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#prompt-context-design)决定每轮输入哪些界面信息、任务状态和 Tool Result，[动态 Context 裁剪]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#dynamic-context-trimming)控制 Token Budget，[Tool Calling]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#tool-calling-pipeline)和[多轮状态规则]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#multi-turn-state)决定任务怎样继续；写操作还要经过[用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/#write-confirmation)，并处理版本冲突、部分成功和结果未知。
+Microsoft 365 Copilot 提供模型循环、Conversation、Planning 和确认。为了实现这三个场景，我完成了 Agent Definition、场景 Instructions、Sydney Context Config 和 Extension 接入。三个场景通过同一套[工程化 Agent Definition]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#agent-definition-engineering)实现，而不是把所有要求堆进一段 Prompt。Instructions 负责模型的决策规则，Sydney Config 和 BizChat pre-model Context Hook 负责 Context 装配与裁剪，Plugin Manifest 负责工具 Description 和参数 Schema，权限、确认和真实业务状态仍由平台与 Extension 校验。具体场景设计见[Prompt 与 Context 设计]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#prompt-context-design)和[动态 Context 装配与裁剪]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#context-minimization)；执行链路见[完整工具调用链路]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#tool-calling-pipeline)、[多轮状态]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#multi-turn-state)和[写操作确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/#write-confirmation)。
 
 ```text
 Microsoft 365 Copilot 网页或 Outlook 入口
@@ -42,7 +42,7 @@ Microsoft 365 Copilot 网页或 Outlook 入口
 
 调整后，到达并确认有效计划的比例从 **69.3% 提升到 81.5%**，确认后全部操作完成的比例从 **90.0% 提升到 96.4%**，最终线上任务完成率从 **62.4% 提升到 78.6%**。离线邮箱整理 Scenario 通过率同时从 **68.1% 提升到 84.7%**，严重安全违规保持为 **0**。
 
-项目做了明确取舍：第一版只开放移动、归档和加旗标，不开放删除、发送和修改收件人；不建设跨任务长期记忆，动态邮件状态需要重新读取；写操作增加一次用户确认，牺牲少量交互效率，换取错误范围可见和操作可控。Context 裁剪和 Token 优化继续作为成本指标，但不用于代替业务完成率。
+项目做了明确取舍：第一版只开放移动、归档和加旗标，不开放删除、发送和修改收件人；不建设跨任务长期记忆，动态邮件状态需要重新读取；写操作增加一次用户确认，牺牲少量交互效率，换取错误范围可见和操作可控。Context 精简和 Token 优化继续作为成本指标，但不用于代替业务完成率。
 
 ## 项目文档
 
