@@ -97,9 +97,9 @@ Microsoft 365 应用包
 
 因此，“Agent 代码运行在哪里”的准确回答是：Agent Manifest 由 Microsoft 365 Copilot Agent Runtime 加载，Sydney Context Config 随请求发送，Context 采集代码由 Sydney 接入层维护，工具实现运行在各 Extension 后端；项目没有单独的 Agent 服务或容器。
 
-## 三项能力怎样接入
+## 三个场景怎样接入
 
-划词解释、附件总结和邮箱整理共用同一个 Declarative Agent，它们是三个业务场景，不是 Declarative Agent Manifest 中三个独立的 `capabilities`。Sydney Context Config 只决定当前邮件、选区、附件或 Folder 等信息是否进入本轮 Context，不负责选择工具。
+划词解释、附件总结和邮箱整理是同一个 Declarative Agent 中的三个业务场景，不是 Declarative Agent Manifest 中三个独立的 `capabilities`。Sydney Context Config 只决定当前邮件、选区、附件或 Folder 等信息是否进入本轮 Context，不负责选择工具。
 
 Agent 的 `actions` 注册全局可用工具。Microsoft 365 Copilot Runtime 将用户输入、Sydney 注入的 Context、Declarative Agent `instructions` 和工具的 Function Description 一起交给模型，由模型决定直接回答还是调用工具。当前项目没有单独维护请求级工具过滤配置。
 

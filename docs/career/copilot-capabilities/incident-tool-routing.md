@@ -37,7 +37,7 @@ Context 缩减后，每条划词解释 Query 中所有模型调用的平均总�
 
 回归集中增加了三类 Query：当前选区足够时不能搜索；已知 Message ID 时优先读取当前邮件；用户明确要求跨邮箱查找时仍必须搜索。
 
-修复先运行这组工具选择 Query，再跑三个 Capability 的全量 Golden Set。`lm_checklist` 和 Citation 没有下降，工具误选 Query 恢复通过后，版本重新进入 Ring。当前整体 `tool_call` 基线为 **93.8%**。
+修复先运行这组工具选择 Query，再跑三个场景的全量 Golden Set。`lm_checklist` 和 Citation 没有下降，工具误选 Query 恢复通过后，版本重新进入 Ring。当前整体 `tool_call` 基线为 **93.8%**。
 
 ## 结论
 

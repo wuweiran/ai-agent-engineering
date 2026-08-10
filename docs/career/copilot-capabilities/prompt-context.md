@@ -142,7 +142,7 @@ Search Outlook to discover emails that are not already identified in the current
 Do not use this function to explain selected text or to reread a known Message ID.
 ```
 
-修复后，80 条专项 Query 不再误调搜索；每条 Query 中所有模型调用的平均总输入从 **12,400 Token 降到 7,600 Token**，下降 **39%**。随后运行三项功能的全量 Golden Set，`lm_checklist` 和 Citation 没有下降，版本才重新进入 Ring。
+修复后，80 条专项 Query 不再误调搜索；每条 Query 中所有模型调用的平均总输入从 **12,400 Token 降到 7,600 Token**，下降 **39%**。随后运行三个场景的全量 Golden Set，`lm_checklist` 和 Citation 没有下降，版本才重新进入 Ring。
 
 ## 评测与定位
 

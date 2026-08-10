@@ -11,9 +11,9 @@ permalink: /docs/career/copilot-capabilities/
 
 ## 项目介绍
 
-Outlook 用户阅读邮件时，经常需要解释局部内容、总结附件，或者继续搜索和整理相关邮件。这个项目的目标不是再做一个通用聊天入口，而是让用户留在当前邮件场景中完成“理解内容—取得证据—执行动作”的任务。我基于 Microsoft 365 Copilot 的 [Declarative Agent 框架]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#declarative-agent-configuration)，从零开发了划词解释、附件总结和邮箱整理三项能力。
+Outlook 用户阅读邮件时，经常需要解释局部内容、总结附件，或者继续搜索和整理相关邮件。这个项目的目标不是再做一个通用聊天入口，而是让用户留在当前邮件场景中完成“理解内容—取得证据—执行动作”的任务。我基于 Microsoft 365 Copilot 的 [Declarative Agent 框架]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#declarative-agent-configuration)，从零开发了划词解释、附件总结和邮箱整理三个场景。
 
-Microsoft 365 Copilot 提供模型循环、Conversation、Planning 和确认；三项能力包含 Agent Definition、场景 Instructions、Sydney Context Config 和 Extension 接入。核心设计包括：[Prompt/Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#prompt-context-design)决定每轮输入哪些界面信息、任务状态和 Tool Result，[动态 Context 裁剪]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#dynamic-context-trimming)控制 Token Budget，[Tool Calling]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#tool-calling-pipeline)和[多轮状态规则]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#multi-turn-state)决定任务怎样继续；写操作还要经过[用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/#write-confirmation)，并处理版本冲突、部分成功和结果未知。
+Microsoft 365 Copilot 提供模型循环、Conversation、Planning 和确认。为了实现这三个场景，我完成了 Agent Definition、场景 Instructions、Sydney Context Config 和 Extension 接入。具体设计包括：[Prompt/Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#prompt-context-design)决定每轮输入哪些界面信息、任务状态和 Tool Result，[动态 Context 裁剪]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/#dynamic-context-trimming)控制 Token Budget，[Tool Calling]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#tool-calling-pipeline)和[多轮状态规则]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#multi-turn-state)决定任务怎样继续；写操作还要经过[用户确认]({{ site.baseurl }}/docs/career/copilot-capabilities/security-confirmation/#write-confirmation)，并处理版本冲突、部分成功和结果未知。
 
 ```text
 Microsoft 365 Copilot 网页或 Outlook 入口
@@ -24,9 +24,9 @@ Microsoft 365 Copilot 网页或 Outlook 入口
 → 回答或邮件操作结果
 ```
 
-## 三项能力
+## 三个场景
 
-| 能力 | 实现方式 | 项目工作 |
+| 场景 | 实现方式 | 项目工作 |
 | --- | --- | --- |
 | 划词解释 | 选区加固定 Prompt 直接生成 | 配置选区 Context、回答范围和 Citation |
 | 附件总结 | 调用附件提取 Extension 后生成 | 处理提取结果、不完整内容和来源引用 |
@@ -46,7 +46,7 @@ Microsoft 365 Copilot 网页或 Outlook 入口
 
 ## 项目文档
 
-- [Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/)：代码形态、平台边界和三项能力的接入方式；
+- [Declarative Agent 接入与执行]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/)：代码形态、平台边界和三个场景的接入方式；
 - [Prompt 与 Context Engineering]({{ site.baseurl }}/docs/career/copilot-capabilities/prompt-context/)：三类 Context、工具描述和 Token 优化；
 - [邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)：项目的核心业务与技术难点；
 - [工具错误与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)：版本冲突、部分成功和结果未知；

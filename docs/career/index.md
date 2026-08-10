@@ -26,7 +26,7 @@ permalink: /docs/career/
 
 ## 2024.08—2025.10　[Outlook Copilot Agent 能力开发]({{ site.baseurl }}/docs/career/copilot-capabilities/)
 
-在已有 Outlook Copilot Agent 中增加划词解释、附件总结和邮箱整理等能力。每项能力通过 Sydney 请求配置声明需要的当前邮件、选区、附件或文件夹 Context，Agent 再根据用户目标选择 Insight Service、附件读取和 Outlook 邮件工具完成任务。
+在已有 Outlook Copilot Agent 中开发划词解释、附件总结和邮箱整理三个场景。每个场景通过 Sydney 请求配置声明需要的当前邮件、选区、附件或文件夹 Context，Agent 再根据用户目标选择 Insight Service、附件读取和 Outlook 邮件工具完成任务。
 
 主要工作是配置这些能力需要的 Context，并设计工具和执行路径。划词解释需要有限邮件上下文，附件总结需要读取和处理文档，邮箱整理则需要搜索邮件、生成动作计划，并在移动、归档或加旗标前取得用户确认；Context 采集代码由 Sydney 接入层同事维护。
 

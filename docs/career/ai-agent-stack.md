@@ -87,7 +87,7 @@ permalink: /docs/career/ai-agent-stack/
 | MCP | 标准化连接外部工具和资源 | Outlook 项目使用 Copilot Extension，不使用 MCP；两者解决的都是能力接入，但协议和平台不同 |
 | 向量 RAG | Chunk、Embedding、向量索引和 Rerank | 知识上覆盖，但 Insight Service 实际采用 Outlook Search 的搜索型 RAG，不使用 Chunk、Embedding 或向量数据库 |
 | vLLM / Ollama | 生产 GPU 推理或本地模型运行 | 没有负责模型推理部署；Purview 使用 Azure OpenAI，Outlook 使用 BizChat 的模型服务 |
-| Multi-Agent / A2A | 多个独立 Agent 分工和通信 | 没有使用；Outlook 三项能力属于同一个通用 Agent |
+| Multi-Agent / A2A | 多个独立 Agent 分工和通信 | 没有使用；Outlook 三个场景属于同一个 Declarative Agent |
 
 ## 面试问题怎样映射
 
