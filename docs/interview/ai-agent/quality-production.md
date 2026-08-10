@@ -26,6 +26,21 @@ permalink: /docs/interview/ai-agent/quality-production/
 
 相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)、[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。
 
+## 怎样从零设计并落地一个 Agent 系统？
+{: #agent-zero-to-production-methodology }
+
+**不要从选择框架开始，而要沿着“业务目标 → Agent 边界 → 技术方案 → 评测 → 上线”推进。**一套完整方法可以分成七步：
+
+1. **还原业务任务**：明确目标用户、触发入口、现有人工流程、输入和最终交付物，列出正常路径、例外情况和转人工条件；成功标准要落到可验证的业务终态，而不是“模型回答看起来不错”；
+2. **[判断是否需要 Agent]({{ site.baseurl }}/docs/ai-agent/llm-workflow-agent/)**：单次总结、分类和抽取优先使用一次模型调用；步骤和分支能够预先枚举时使用 Workflow；只有下一步需要根据工具或环境反馈动态变化时，才引入 Agent；
+3. **[确定自动化边界]({{ site.baseurl }}/docs/ai-agent/agent-design/decision-boundary/)**：划分模型、程序和人的职责。模型处理意图理解、开放判断和路径选择；程序执行权限、参数、预算、幂等和状态校验；高风险动作由用户确认或人工审批。第一版可以只给建议或生成草稿，再逐步开放真实执行；
+4. **[完成技术选型]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)**：根据产品入口、任务时长、工具环境、状态恢复、安全隔离和团队维护能力，在托管 Agent 平台、Agent SDK、LangChain/LangGraph 等代码框架与自建 Runtime 之间选择。MCP 解决能力接入，不等于 Agent 框架；没有明确的职责、权限或 Context 隔离需求时，不默认拆成 Multi-Agent；
+5. **[设计核心链路]({{ site.baseurl }}/docs/ai-agent/agent-building/business-integration/)**：定义 Prompt 和完成条件，确定每轮需要的 Context、Token Budget 和裁剪策略；为工具设计名称、Description、参数 Schema 和 Tool Result；区分 Conversation、Agent 任务、业务状态与长期记忆，并提前处理超时、重试、部分成功、结果未知和恢复；
+6. **[评测先于扩量]({{ site.baseurl }}/docs/ai-agent/agent-quality/evaluation/)**：从真实任务建立 Golden Set，分别检查任务完成、工具和参数、安全边界、故障恢复、延迟与每个成功任务的 Token 成本。失败时通过 Trace 找到第一次偏离，而不是只看最终回答或平均分；
+7. **[最小闭环上线]({{ site.baseurl }}/docs/ai-agent/agent-production/release-upgrade/)**：先交付一个高价值场景和最少工具，完成鉴权、确认、可观测性和回滚；再经过离线回归、灰度发布和线上指标观察，把生产失败脱敏后补入评测集，持续扩大任务范围和自动化程度。
+
+需求阶段至少应产出四项内容：**任务和成功标准、模型/程序/人工边界、工具与权威状态清单、评测样本与发布门槛**。技术选型只有能够解释这些约束，才是方案，而不是框架名称列表。
+
 ## 生产级 Agent 架构怎样设计？
 {: #production-agent-architecture }
 

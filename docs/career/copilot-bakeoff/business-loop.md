@@ -78,6 +78,7 @@ Scraping、Mapping 或 ingestion 失败不进入上述四类产品结果，而�
 高频且影响任务完成的共同能力差距优先级最高。纯文风差异、低频场景或不符合产品方向的行为，可以记录但不进入近期开发计划。
 
 ## 怎样形成闭环
+{: #product-improvement-loop }
 
 确认要修复的问题会回到正常的 Copilot Evaluation 和发布流程：
 

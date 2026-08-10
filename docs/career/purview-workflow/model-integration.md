@@ -10,6 +10,7 @@ permalink: /docs/career/purview-workflow/model-integration/
 # 工作流概括与生成
 
 ## 接入背景
+{: #workflow-llm-integration }
 
 2023 年初，我们开始把大模型接入 Purview Workflow。最先实现的不是在工作流中增加一个通用模型 Action，而是围绕 Workflow Definition 提供两项产品能力：
 

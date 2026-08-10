@@ -10,6 +10,7 @@ permalink: /docs/career/copilot-evaluation/golden-set/
 # Golden Set 与 Grounding Data
 
 ## 数据定义
+{: #evaluation-data-definition }
 
 在这个项目中，Golden Set 通常指一组由 **CIQ 和用户输入 Utterance** 组成的评测输入，每一条称为一条 **Query**：
 
@@ -68,6 +69,7 @@ Assertion：根据邮件证据判断 Agent Result
 集中维护后，新功能优先复用已有邮件，再补充确实缺少的邮件类型。修改或删除邮件前先检查它关联的 Query 和 Assertion，避免修复一个场景却让其他回归测试失效。
 
 ## 引入真实用户 Utterance
+{: #real-user-utterance }
 
 统一数据集解决了复用和维护问题，但已有 Grounding Data 与开发者编写的 Utterance 仍不能充分反映真实用户分布。开发者容易围绕功能设计“理想问题”，线上用户则会使用更短、更模糊或更依赖当前邮件上下文的表达。
 

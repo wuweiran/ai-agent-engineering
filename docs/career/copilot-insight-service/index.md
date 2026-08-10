@@ -9,11 +9,11 @@ permalink: /docs/career/copilot-insight-service/
 
 # Outlook Copilot Insight Service
 
-## 项目是什么
+## 项目介绍
 
-组织调整后转入 Outlook 团队，参与 Outlook Copilot Insight Service。Copilot 上线初期曾使用老旧的 .NET UserActivityLogService 作为搜索工具，但延迟高且稳定性不足，很快由 Insight Service 替代。这个服务位于 Outlook 业务数据和 Copilot 之间，为模型准备当前请求真正需要的邮件、会话、日历、联系人和组织信息。
+Outlook Copilot Insight Service 位于 Outlook 业务数据和 Copilot 之间，负责为模型取得当前请求需要的邮件、会话和日历证据。它是一套基于 Outlook 原生搜索的**搜索型 RAG**：服务负责 Retrieval 和 Context Augmentation，Copilot 模型负责最终 Generation，不使用文档 Chunk、Embedding 或向量数据库。
 
-它是一套基于 Outlook 原生搜索和业务对象的 **搜索型 RAG**，不依赖文档 Chunk、Embedding 或向量数据库。Insight Service 负责 Retrieval 和 Context Augmentation，Copilot 模型负责最终 Generation。项目重点不再是怎样调用模型，而是怎样让模型看到正确、及时且有权限的信息；它也是后续 Copilot Agent 能力的数据基础。
+我的核心职责是 `/insights/query` 的[邮件检索链路]({{ site.baseurl }}/docs/career/copilot-insight-service/mail-rag/#query-retrieval-pipeline)，包括分页召回、[对象级权限过滤]({{ site.baseurl }}/docs/career/copilot-insight-service/mail-rag/#permission-filtering)、Message 与 Conversation 去重、[多特征排序]({{ site.baseurl }}/docs/career/copilot-insight-service/mail-rag/#ranking)和 Top 12 选择。核心难点是在持续变化的邮箱数据中，以有界延迟和内存返回足够且有权限的证据；为此使用[有界候选池]({{ site.baseurl }}/docs/career/copilot-insight-service/mail-rag/#bounded-top-k)、分页提前停止和[超时降级与过载保护]({{ site.baseurl }}/docs/career/copilot-insight-service/performance/#degradation-overload-protection)，并保留 Citation 供模型回答。
 
 ## 系统处在什么位置
 
@@ -33,14 +33,6 @@ Outlook Copilot 请求
 模型通过 Tool Call 使用 Insight Service，直接传入 Query、绝对时间和用户 UUID。Copilot Runtime 负责执行调用并附带用户 Token 和 Outlook 界面 Context；候选数量和 Token 预算由 Insight Service 控制。
 
 对外接口只保留邮件 Query、Conversation Context 和 Calendar Context。已知 Message ID 或 Event ID 的详情由 Outlook 读取工具直接调用 Microsoft Graph API；用户 UUID 由模型从已有人员或目录 Context 中取得，不由 Insight Service 解析姓名。具体请求与返回结构见 [接口与 Context 请求]({{ site.baseurl }}/docs/career/copilot-insight-service/context-api/)。
-
-## 主要工作
-
-团队共同维护 Insight Service 的邮件 Query、Conversation 和 Calendar Context。我的核心职责是 **`/insights/query` 的邮件检索链路**：将模型传入的 Query、绝对时间、用户 UUID 和当前邮件 Anchor 转成 Outlook Search 请求，完成分页召回、对象级权限过滤、Message 与 Conversation 去重、多特征打分和 Top-K 排序，最后返回 Message ID、Conversation ID、Snippet 和 Citation。
-
-Conversation 与 Calendar Context 由团队其他成员负责。我参与 `search_outlook_context` Extension 和 HTTP 契约，以及邮件对象级权限接入；Query 返回 Conversation ID 后，模型可以通过团队提供的 Conversation Extension 继续取得线程证据。
-
-这条工作的重点是**在海量且持续变化的邮箱数据中，以有界延迟和内存找到足够回答问题的候选证据，同时保证对象级权限、结果时效和 Citation**。
 
 ## 这个项目可以深入到哪里
 

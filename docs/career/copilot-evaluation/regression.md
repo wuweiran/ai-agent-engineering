@@ -47,6 +47,7 @@ SEVAL 负责稳定地执行和汇总结果，但不定义邮件任务的成功�
 只跑功能开发者新增的测试不能说明无回归。一个附件总结 Prompt 的修改可能改变通用 Instructions，邮箱整理工具的 Schema 更新也可能影响模型对其他工具的选择，所以功能切片通过后还要跑全量集。
 
 ## 质量门禁
+{: #quality-gates }
 
 候选版本需要同时满足绝对门禁和相对门禁。
 
@@ -99,6 +100,7 @@ Query Pass Rate
 如果候选版本稳定下降，再认定为回归；如果两边都在通过和失败之间波动，则标记为不稳定 Query，单独分析 Assertion、模型随机性和场景设计。User Simulator 多轮 Scenario 同样固定 Simulator 版本并重复执行，避免把模拟用户的差异归因于 Agent。
 
 ## 有问题时怎样定位
+{: #trace-diagnosis }
 
 定位从失败 Query 开始，而不是先猜 Prompt。先完成有效性检查，再比较基线和候选版本的 Trace。
 

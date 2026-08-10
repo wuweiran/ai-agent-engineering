@@ -58,6 +58,7 @@ Logic Apps 根据 runAfter 调度 HTTP Action
 定义保存或发布时，Purview 后端解析并验证支持 Expression 的 Parameter。Logic Apps 执行到相应 HTTP Action 后，调用 Purview Action API 并传入 Action 类型和 Parameter；Purview 执行层调用 Evaluator，使用求值结果完成任务，随后通过 Logic Apps 的回调接口报告 Action 结果。
 
 ## 核心实现
+{: #expression-core-implementation }
 
 ### 统一语法与前端编辑
 
@@ -93,6 +94,7 @@ Evaluator 遍历 AST，并从当前工作流实例取得运行输入和前序节
 这项工作的关键取舍是**可配置性与可控制性**。Expression 要足以覆盖高频客户需求，包括通过受控函数取得外部数据；同时不能演变成客户可以任意编写网络请求、难以验证和难以排查的脚本平台。
 
 ## 复用方式与交付周期
+{: #expression-reuse-delivery }
 
 Expression 把每个 Action 都可能需要的动态能力抽成了统一层：支持 Expression 的 Parameter 使用相同的语法、Parser、Validator 和 Evaluator；`getManager` 等领域函数注册一次后，可以被不同 Action 和不同客户的工作流组合使用。新增需求的实现单位因此从“开发一个完整 Action”变成了“组合已有函数”，能力不足时也通常只需增加一个受控函数。
 

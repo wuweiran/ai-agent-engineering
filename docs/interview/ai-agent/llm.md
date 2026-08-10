@@ -9,7 +9,7 @@ permalink: /docs/interview/ai-agent/llm/
 
 # 大模型与应用基础面试题
 
-这些问题来自 AI Agent 岗位面试，讨论模型结构、面向工具使用的模型训练，以及普通大模型应用与 Agent 都会遇到的 Context 管理。它们是 Agent 工程师需要理解的上游基础，但不等于 Agent Runtime 本身，也不要求读者具备训练基础模型的完整经验。
+这些问题来自 AI Agent 岗位面试，讨论模型结构、面向工具使用的模型训练、Prompt 和结构化交互。它们是 Agent 工程师需要理解的上游基础，但不等于 Agent Runtime 本身，也不要求读者具备训练基础模型的完整经验。
 
 ## 模型结构
 
@@ -113,23 +113,3 @@ permalink: /docs/interview/ai-agent/llm/
 共同边界是：**只保证结果形状，不保证语义、权限和业务状态正确。**
 
 相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)、[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)。
-
-## Context 管理
-
-## Context 超出限制时怎样处理？滑动窗口和摘要有什么区别？
-{: #context-overflow-window-summary }
-
-先把完整会话、任务状态和大文件保存在 Context 之外，再组合几种手段：
-
-- 清理过期工具结果，按需重新读取原文；
-- 结构化保存目标、约束、事实和待办；
-- 保留近期原文，对较早历史做摘要或压缩。
-
-两种方法的区别是：
-
-- **滑动窗口**保留最近消息，原文准确、实现简单，但可能丢失早期目标和证据；
-- **摘要**保留更远的事实、决定和待办，但属于有损转换，可能遗漏或引入错误。
-
-生产系统通常组合**近期原文、结构化任务状态、历史摘要和外部可重读资料**，而不是只选一种。
-
-相关内容：[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)。

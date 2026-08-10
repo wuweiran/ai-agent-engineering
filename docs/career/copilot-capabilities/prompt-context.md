@@ -16,6 +16,7 @@ permalink: /docs/career/copilot-capabilities/prompt-context/
 这种拆分主要解决实际维护问题：修改邮箱整理的搜索规则时，不应改变划词解释；附件提取失败的处理，也不应该进入普通问答。通用 Instructions 和场景规则随 Agent Definition 一起版本化发布。
 
 ## 从头设计一项能力
+{: #prompt-context-design }
 
 我不会先写 Prompt，而是按五步设计。以“把最近两周需要我跟进的邮件移到 Follow Up”为例：
 
@@ -93,6 +94,7 @@ Context Config 只要求 Sydney 注入当前 Folder。初始 Context 再加上�
 Tenant、User、Token 和服务端候选上限不让模型填写，由 BizChat 和 Extension 从当前用户请求中取得。
 
 ## 长对话处理
+{: #dynamic-context-trimming }
 
 较早对话不会无限保留原文。项目保留当前用户目标、已确认条件、资源 ID、计划和执行结果，已经被新结果替代的 Tool Result 从下一轮删除。邮件和附件仍保存在 Outlook，需要核实时重新读取。
 

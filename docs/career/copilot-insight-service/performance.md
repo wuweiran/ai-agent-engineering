@@ -92,6 +92,7 @@ OBO 换取的 Outlook Search Token 按用户、租户、Scope 和目标资源缓
 这些配置带版本号，发布或配置变更时主动失效。用户 UUID 和对象权限不放入跨请求长期缓存，避免组织关系或授权变更后继续使用旧结果。
 
 ## 降级与过载保护
+{: #degradation-overload-protection }
 
 Outlook Search 延迟升高时，服务按剩余 Deadline 决定是否继续翻页。已经有候选就返回部分结果，没有候选则返回数据源暂时不可用。`partial` 和 `warnings` 会进入 Tool Result，模型可以说明证据范围或收紧 Query 后重试。
 

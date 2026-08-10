@@ -10,6 +10,7 @@ permalink: /docs/career/copilot-evaluation/metrics/
 # 指标与结果分析
 
 ## 核心指标
+{: #evaluation-metrics }
 
 SEVAL 中每个 Metric 都必须产生可比较的数值。主回归报告保留五个核心指标：
 

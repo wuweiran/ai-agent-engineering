@@ -93,6 +93,7 @@ Bake-off 子集关联的 Outlook Grounding Data
 Outlook 与 Gmail 的底层格式和线程规则不同，因此目标是语义等价，不是复制内部对象结构。
 
 ## 三类 Mapping
+{: #cross-system-mapping }
 
 ### User Mapping
 
@@ -129,6 +130,7 @@ Gemini Query
 Golden Set Mapping 记录一条 Query 在两边的执行入口。Utterance 和成功标准保持一致，只有产品所需的 Context 入口不同。
 
 ## Playwright scraping
+{: #playwright-scraping }
 
 一个 Gemini Query 的执行步骤是：
 
@@ -247,6 +249,7 @@ Smoke 告警或 Variant 熔断
 后续只监控新出现的 Response 容器，不能直接读取页面中最后一个已有节点，否则可能把上一条 Query 或上一轮回答当成本次结果。
 
 ### 判断生成结束
+{: #response-completion-detection }
 
 Gemini Response 是流式更新的，看到非空文本只能说明生成已经开始。执行器每 **500 毫秒**读取一次新 Response 的规范化 `innerText`，同时观察生成状态。只有以下条件全部满足才标记为完成：
 
@@ -311,6 +314,7 @@ Scraping 失败时保存失败阶段、错误码、UI Variant、Scraping Version
 只有成功提取到 Outlook 与 Gemini 两侧 Response 的 Query 才进入配对质量评分。页面显示 Gemini 自身无法完成任务或产品错误时，要保留为产品结果；Playwright 没能操作页面则属于 scraping 失败。两者必须分开，否则自动化稳定性会被误当成模型质量。
 
 ## Response 配对与 SEVAL 评分
+{: #response-pairing-evaluation }
 
 Outlook Team 的 Bake-off 系统先完成两侧执行、过滤无效 Run，并生成统一的 Response 记录：
 

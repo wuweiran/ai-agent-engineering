@@ -40,6 +40,7 @@ Utterance: 总结这封邮件中的决定和行动项
 Agent SDK 返回第一轮回答和 Conversation ID。执行器保存 Conversation ID、Agent Result 和 Trace，后续输入只通过同一个会话继续，不重新创建单轮请求。
 
 ## 后续用户输入怎样模拟
+{: #user-simulator }
 
 后续 Utterance 使用两种方式生成。
 
@@ -107,6 +108,7 @@ User Profile + Transcript + 上一轮 Agent Result
 达到轮次上限仍未完成，Scenario 记为未完成，而不是让 Simulator 无限与 Agent 对话。出现权限泄露或未确认写入则立即终止，并计入 `safety`。
 
 ## 怎样评分
+{: #multi-turn-scoring }
 
 多轮评测同时保存 Turn 级和 Scenario 级结果。
 

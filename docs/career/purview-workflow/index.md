@@ -9,11 +9,11 @@ permalink: /docs/career/purview-workflow/
 
 # Microsoft Purview 工作流
 
-## 项目是什么
+## 项目介绍
 
-Microsoft Purview 是面向企业数据治理的产品。所在团队维护其中的工作流能力，让管理员围绕数据资产配置审批、通知和自动处理步骤，例如访问申请、策略确认和人工复核。
+Microsoft Purview 是面向企业数据治理的产品，这个项目为数据资产提供审批、通知和自动处理工作流，底层流程调度由 Azure Logic Apps 完成，团队负责上层领域模型、Action 和产品能力。我参与工作流的全栈开发，主要担任 **Expression 领域 Owner**。过去每项客户定制都要开发新的 Action；我从零完成 Expression 的[设计、解析、验证和运行时求值]({{ site.baseurl }}/docs/career/purview-workflow/expression/#expression-core-implementation)，并将它接入 Workflow Definition 和 Custom Action，使已有函数可以直接组合，新领域函数通常约一周交付，而完整 Action 需要四到八周。具体复用方式见[交付周期对比]({{ site.baseurl }}/docs/career/purview-workflow/expression/#expression-reuse-delivery)。
 
-2022 年 5 月加入微软后，主要担任工作流 Expression 领域的 Owner，同时参与这套在线系统的日常开发和维护。最初的工作与大模型无关，核心是为工作流建立可配置的表达式能力。
+2023 年，我还参与将 LLM 接入现有工作流，落地 Definition 的自然语言概括和生成。模型只生成说明或可编辑草稿，Action、Parameter、依赖关系和 Expression 仍由后端校验，用户确认后才能保存或发布。这个项目的技术主线是**可定制工作流能力**和[确定性业务系统中的 LLM 接入]({{ site.baseurl }}/docs/career/purview-workflow/model-integration/#workflow-llm-integration)，不是 Agent Runtime。
 
 ## 系统处在什么位置
 
@@ -38,16 +38,6 @@ Purview Catalog
 Expression 是符合自定义语法的单行字符串，作为指定 Workflow Action 的某个 Parameter 值保存在 Workflow Definition 中。哪些 Parameter 支持 Expression 由系统定义。它可以引用工作流的触发输入和前序节点输出，也可以通过 `getUserName`、`getManager` 等后端注册函数取得外部数据。Logic Apps 执行到相应 Action 时，Purview Action 执行层对支持 Expression 的 Parameter 求值，再使用实际参数完成任务。
 
 完整的语言形式、系统位置和核心实现见 [Workflow Expression]({{ site.baseurl }}/docs/career/purview-workflow/expression/)。
-
-## 主要工作
-
-这段工作的主线是担任 **Workflow Expression 领域的 Owner**。此前，每项客户定制需求都要实现成一个新的 Workflow Action，需要产品设计、前端和后端开发、测试与发布。Expression 把可以抽象的动态数据处理和判断逻辑交给工作流定义，使客户能够组合已有能力完成定制，显著缩短交付周期。
-
-我从零定义了这套 Expression 的 EBNF 语法、类型和运行时语义。前端根据语法使用 ANTLR 生成 Parser，并结合 Monaco Editor 提供高亮和即时错误提示；Scala 后端使用 scala-parser-combinators 解析 Expression、形成 AST，再完成验证和求值。
-
-Expression 后来成为 **Custom Action** 的核心运行时能力。用户可以自定义 Action，并在系统指定的 Parameter 中使用 Expression，根据工作流输入、前序节点输出或外部数据动态计算实际参数值。除了这条主线，我也参与 Workflow Definition、Purview Action、Catalog 集成、Logic Apps 实例包装以及 Scala + ZIO 服务的日常开发和运维。
-
-这段经历一方面让我完整负责了一个领域能力从定义到落地，另一方面让我熟悉了如何在托管工作流引擎之上建设产品能力：底层调度交给 Logic Apps，Purview 层负责领域定义、Action、Expression 和上下游闭环。
 
 ## 开始接触大模型
 

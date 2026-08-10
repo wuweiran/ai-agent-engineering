@@ -61,14 +61,42 @@ Ring 中出现未确认写入、权限泄露或明显的工具误选时停止放
 没有采用固定的 5%、25%、100% 作为所有版本的发布比例。实际放量范围由功能风险、当次回归结果和平台发布安排决定。
 
 ## 线上观测
+{: #online-observability }
 
-项目日常关注少量直接指标：
+线上业务指标重点看**邮箱整理任务完成率**。它不是根据模型最后是否说“完成”来判断，而是把同一任务中的 Plan、用户确认和 Extension 逐项结果串起来，以 Outlook 写操作的真实状态作为业务终态。
 
-- 三项功能的请求量、成功和用户重新提问；
-- 每次请求的模型轮次、Tool Call 数量和输入输出 Token；
-- 工具选择错误、`version_conflict`、`partial_success` 和 `result_unknown`；
-- 首 Token 和完整生成延迟；
-- 用户确认、取消和计划修改。
+一次任务使用 BizChat Conversation ID、当前 Plan 版本和 Operation ID 关联以下事件：
+
+```text
+mailbox_task_started：识别为受支持的移动、归档或加旗标任务
+→ plan_presented：生成包含目标 Message ID、动作和 Folder 的计划
+→ plan_confirmed / task_cancelled：用户确认或主动取消
+→ operation_submitted：写 Extension 接受请求并返回 Operation ID
+→ item_result：每封邮件返回 succeeded、failed 或 unknown
+→ task_completed：当前确认计划中的全部邮件最终 succeeded
+```
+
+只有 `task_completed` 才进入完成数。模型生成成功文案、HTTP 返回 200 或 Tool Call 已发出都不能单独算完成；`partial_success` 要继续关联剩余项，`result_unknown` 要使用原 Operation ID 查到最终状态。用户主动取消和删除、发送等未支持请求单独统计，不进入完成率分母；没有形成可确认计划、确认后没有完成全部操作或 30 分钟内仍未收敛到终态，则记为未完成。
+
+```text
+线上任务完成率
+= 产生 task_completed 的邮箱整理任务数
+÷ 受支持且未主动取消的 mailbox_task_started 数
+```
+
+这仍然只能证明系统完成了用户确认的邮件操作，不能完全证明用户主观满意。任务后短时间内重新整理同一批邮件、撤销操作或重复表达同一意图，需要作为补充信号观察。
+
+这条链路再拆成两个阶段观察：
+
+| 阶段 | 初版 | 当前版本 |
+| --- | ---: | ---: |
+| 到达并确认有效计划 | 69.3% | 81.5% |
+| 确认后全部操作完成 | 90.0% | 96.4% |
+| 端到端线上任务完成 | 62.4% | 78.6% |
+
+第一阶段主要通过减少无效追问、按需读取候选和在用户修改条件后重建计划提升；第二阶段主要通过处理 `version_conflict`、`partial_success` 和 `result_unknown` 提升。离线邮箱整理 Scenario 通过率从 **68.1% 提升到 84.7%**，用于发布前阻止回归；线上任务完成率才用于判断真实用户任务是否走到业务终态。
+
+Tool Call 错误、确认与计划修改用于定位过程损失，模型轮次、Token 和延迟用于观察运行效率。严重安全违规保持为 **0**，不参与平均分。
 
 底层 CPU、内存、连接池和工具服务可用性属于平台或 Extension 团队。项目只使用这些依赖指标判断问题是否来自工具后端。
 

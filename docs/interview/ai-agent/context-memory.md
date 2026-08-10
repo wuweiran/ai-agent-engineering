@@ -62,6 +62,24 @@ RAG 是取回手段，不等于长期记忆本身；长 Context 也不能代替�
 
 相关内容：[Agent 状态与记忆]({{ site.baseurl }}/docs/ai-agent/agent-design/state-memory/)、[Claude Code 长会话]({{ site.baseurl }}/docs/ai-agent/claude-code/session-compaction/)。
 
+## Context 超出限制时怎样处理？滑动窗口和摘要有什么区别？
+{: #context-overflow-window-summary }
+
+先把完整会话、任务状态和大文件保存在 Context 之外，再组合几种手段：
+
+- 清理过期工具结果，按需重新读取原文；
+- 结构化保存目标、约束、事实和待办；
+- 保留近期原文，对较早历史做摘要或压缩。
+
+两种方法的区别是：
+
+- **滑动窗口**保留最近消息，原文准确、实现简单，但可能丢失早期目标和证据；
+- **摘要**保留更远的事实、决定和待办，但属于有损转换，可能遗漏或引入错误。
+
+生产系统通常组合**近期原文、结构化任务状态、历史摘要和外部可重读资料**，而不是只选一种。
+
+相关内容：[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)。
+
 ## Agent 的记忆怎样更新和遗忘？
 {: #memory-update-forgetting }
 

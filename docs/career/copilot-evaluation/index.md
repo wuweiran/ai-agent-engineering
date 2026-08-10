@@ -9,11 +9,11 @@ permalink: /docs/career/copilot-evaluation/
 
 # Copilot Evaluation 与 Golden Set
 
-## 项目是什么
+## 项目介绍
 
-2025 年 6 月开始参与 Outlook Copilot 评测，最初与 Agent 功能开发并行，2025 年 10 月后成为主要工作。微软内部的 **SEVAL** 负责 Evaluation Job 的创建、调度和结果管理；Outlook 团队负责准备邮件业务的评测数据、评分规则和发布判断。
+这个项目为 Outlook Copilot 建立可重复的 Agent 评测和发布判断。微软内部 SEVAL 负责 Evaluation Job 的创建、调度和结果管理；Outlook 团队定义邮件业务的评测数据、成功标准和上线门禁。我负责持续维护 [Golden Set Query、Grounding Data 和 Assertion]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#evaluation-data-definition)，并将 eyes-off 脱敏后的[真实用户 Utterance]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#real-user-utterance)纳入回归，使评测既覆盖真实邮件 Context，也能长期复用邮件证据。
 
-我负责持续维护 Query Set、Grounding Data 和 Assertion，使用这些资产比较生产版本与候选版本，并通过 Trace 定位失败。
+版本发布时，我使用同一套资产配对比较 Baseline 和 Candidate，按功能汇总 [LM Checklist、Citation、Tool Call 和 Safety]({{ site.baseurl }}/docs/career/copilot-evaluation/metrics/#evaluation-metrics)，并通过[绝对与相对质量门禁]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#quality-gates)阻止新增回归。多轮任务使用固定脚本或 [User Simulator]({{ site.baseurl }}/docs/career/copilot-evaluation/multi-turn/#user-simulator)补充后续输入；出现失败时，从 Query 级结果进入 [Trace 定位]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#trace-diagnosis)，找到 Context、模型、Tool Call、Tool Result 或评分中的第一次偏离。
 
 ## Outlook 评测有什么不同
 
@@ -63,10 +63,6 @@ Query、邮件或 Assertion 变化时发布新的资产版本；比较 Agent、�
 Trace 将 Email ID、Runtime Context、模型决策、Tool Call、Tool Result 和评分结果串起来。团队可以判断问题应由评测数据、CIQ、Agent、Extension 还是 Metric 的 Owner 处理，减少只凭最终回答反复猜测根因。
 
 所以这个项目没有替代功能团队开发 Copilot 能力；它提供了各功能共同使用的邮件测试资产、真实输入分布、发布标准和失败归因方式。
-
-## 主要工作
-
-我负责 Query Set、Grounding Data 和 Assertion 的持续维护，引入 eyes-off 脱敏后的真实 Utterance，维护 Metric、Baseline/Candidate 回归、质量门禁和 Trace 失败定位。统一 Golden Set 的初次整合由团队完成，SEVAL 平台和各项 Copilot 功能实现不属于我的交付。
 
 ## 项目文档
 

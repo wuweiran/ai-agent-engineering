@@ -9,11 +9,11 @@ permalink: /docs/career/copilot-bakeoff/
 
 # Copilot Bake-off
 
-## 项目是什么
+## 项目介绍
 
-2026 年 3 月开始参与 Copilot Bake-off，作为 Copilot Evaluation 主线下的专项对比工作。项目只比较 Outlook Copilot 和 Gmail Gemini **双方都具备的功能**：先通过 Bake-off 标签从 Outlook Golden Set 中筛选共同能力 Query，再复用这些 Query 对应的 Grounding Data 和 Assertion。Outlook Team 的系统完成两侧执行和 Response 配对，最后才把评分输入提交到 SEVAL，通过 LM Checklist 判断哪一侧对相同任务要求的满足程度更高。
+Copilot Bake-off 是 Outlook Copilot Evaluation 下的竞品对比系统，用同一组邮件、用户任务和 Assertion 比较 Outlook Copilot 与 Gmail Gemini 的完整产品结果，而不是比较裸模型。项目只选择双方都支持的功能；由于 Gmail Gemini 没有对等评测接口，核心方案是通过 [Playwright scraping]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#playwright-scraping)操作 Gmail 页面并采集 Response，再与 Outlook 结果做配对评分。
 
-这里比较的不是裸模型 API，而是两个邮件产品的完整结果。Outlook 侧沿用已有 Evaluation 执行链路；Gmail Gemini 没有供项目直接调用的对等评测接口，因此核心实现是用 **Playwright 操作 Gmail Gemini 页面并采集结果**，内部称为 **scraping**。
+我从零搭建了这套 Bake-off 系统。系统包括共同能力 Query 筛选、Google Workspace 数据导入、[跨系统 Mapping]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#cross-system-mapping)、Playwright 执行、两侧 Response 配对和 SEVAL 评分。Playwright 执行器按页面状态推进，并[判断流式生成是否真正结束]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-completion-detection)；scraping、数据映射和产品失败分别统计，只有两侧都得到有效 Response 的 Query 才进入[配对与 LM Checklist 评分]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-pairing-evaluation)。最终结果用于定位 `Outlook fail / Gemini pass` 的具体产品差距。高价值问题会进入[长期回归闭环]({{ site.baseurl }}/docs/career/copilot-bakeoff/business-loop/#product-improvement-loop)：加入常规 Outlook Golden Set，完成修复、功能切片和全量回归，通过质量门禁后发布，再由下一次 Bake-off 验证差距是否收敛。
 
 ## 系统怎样工作
 
@@ -61,20 +61,6 @@ Outlook Team 的 Bake-off 系统先过滤执行失败并配对两侧有效 Respo
 Bake-off 不给两个产品做笼统总排名，而是按共同能力 Query 识别 `Outlook fail / Gemini pass` 的相对短板、`Outlook pass / Gemini fail` 的相对优势，以及双方都失败的困难任务。确认是真实产品差异后，再按 Context、工具、生成或 Citation 定位 Outlook 的第一次偏离。
 
 高价值差距会回到常规 Outlook Golden Set，经过功能切片、全量回归、质量门禁和 Ring 发布；下一次 Bake-off 再验证差距是否收敛。Bake-off 提供外部参照，但不替代日常发布评测。完整流程见[结果分析与业务闭环]({{ site.baseurl }}/docs/career/copilot-bakeoff/business-loop/)。
-
-## 主要工作
-
-主要工作包括：
-
-- 使用 Playwright 自动操作 Gmail Gemini 并采集 Response；
-- 处理页面加载、流式生成、超时和 scraping 失败分类；
-- 维护 Bake-off 标签，只选择双方都有对应功能的 Query；
-- 将裁剪后 Query 对应的 Outlook Grounding Data 导入 Google Workspace；
-- 维护 User、Email 和 Golden Set Mapping；
-- 在 Outlook Team 的系统中调度两侧执行、过滤失败并配对有效 Response；
-- 将 Response、Grounding Data 和 Assertion 提交到 SEVAL 运行 LM Checklist；
-- 取得评分后生成 Query 级产品对比；
-- 聚类 Outlook 相对短板和优势，将高价值差距转入常规 Golden Set 与发布回归。
 
 ## 这个项目可以深入到哪里
 

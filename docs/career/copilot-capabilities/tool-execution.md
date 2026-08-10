@@ -24,18 +24,21 @@ permalink: /docs/career/copilot-capabilities/tool-execution/
 其他常见结果比较直接：参数缺失时修正或澄清，权限不足时停止处理该对象，工具暂时不可用时返回未完成结果。
 
 ## 资源版本
+{: #version-conflict }
 
 邮件写工具接收 Message ID 和资源版本。用户确认之后，邮件仍可能被移动、删除或修改，这时 Extension 返回 `version_conflict`。
 
 Agent 不强制执行旧计划，而是重新读取冲突邮件。已经不存在的对象从计划中移除；动作范围发生变化时，由平台生成新计划并重新确认。用户确认解决“是否同意执行”，资源版本解决“对象是否仍然是确认时的状态”，两者不能相互替代。
 
 ## 部分成功
+{: #partial-success }
 
 一次批量写入测试包含 12 封目标邮件，其中 9 封移动成功、2 封版本冲突、1 封结果未知。Agent 保留 9 封成功项，只对剩余 3 封继续处理，没有重新提交整个批次。
 
 这条规则很重要，因为重新提交整个批次可能重复处理已经成功的邮件。项目不实现底层幂等数据库，只保证 Agent 不绕过 Extension 提供的 Operation ID 和逐项结果。
 
 ## 结果未知
+{: #result-unknown }
 
 `result_unknown` 通常表示调用超时或响应丢失，不能据此判断操作没有发生。Agent 不改参数重新调用写工具，而是保留原 Operation ID，等待平台或 Extension 查询最终状态。
 

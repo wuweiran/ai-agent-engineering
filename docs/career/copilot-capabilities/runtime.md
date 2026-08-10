@@ -31,6 +31,7 @@ Microsoft 365 Copilot 网页或 Outlook 入口
 ```
 
 ## Declarative Agent 怎样配置
+{: #declarative-agent-configuration }
 
 Microsoft 365 应用包引用 Declarative Agent Manifest。Manifest 定义整个 Agent，而不是分别定义三项业务场景：
 
@@ -111,6 +112,7 @@ Agent 的 `actions` 注册全局可用工具。Microsoft 365 Copilot Runtime 将
 因此，即使请求一直带有邮件 Context，也不代表模型一定会调用邮件工具。
 
 ## 完整工具调用链路
+{: #tool-calling-pipeline }
 
 工具首先以 Extension 的形式注册到 BizChat，向模型暴露工具名称、Description 和参数 Schema。项目不实现这些工具的 Handler，但需要把使用边界写清楚：`search_outlook_context` 用于发现未知邮件，`read_outlook_message` 用于读取已知 Message ID，移动、归档和加旗标工具只处理已经确认的目标对象。
 
@@ -149,6 +151,7 @@ Tool Result 回到同一个 Conversation，模型根据结果决定回答、继�
 完整的邮箱整理流程见[邮箱整理端到端设计]({{ site.baseurl }}/docs/career/copilot-capabilities/mailbox-organization/)，错误处理见[工具错误与执行控制]({{ site.baseurl }}/docs/career/copilot-capabilities/tool-execution/)。
 
 ## 多轮状态
+{: #multi-turn-state }
 
 Conversation 和计划由平台保存。项目只规定哪些业务信息可以继续使用：用户已经确认的时间、人员、Folder 和排除项可以在同一任务中保留；搜索候选、资源版本和权限结果需要按当前步骤重新取得。用户修改动作或范围后，旧计划失效并重新确认。
 

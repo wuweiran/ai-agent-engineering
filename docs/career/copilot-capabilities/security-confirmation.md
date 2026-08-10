@@ -25,6 +25,7 @@ Agent Actions 与 Function 安全语义
 Extension 返回 `permission_denied` 后，Agent 停止处理该对象，不改用其他身份，也不通过更宽泛的搜索推测邮件内容。项目日志只记录资源 ID、工具和错误状态，不保存完整邮件、附件或用户 Token。
 
 ## 写操作确认
+{: #write-confirmation }
 
 搜索、读取和附件提取是只读操作，可以在权限检查后直接执行。邮箱整理中的移动、归档和批量加旗标会改变邮箱，平台会展示计划并取得用户确认。
 

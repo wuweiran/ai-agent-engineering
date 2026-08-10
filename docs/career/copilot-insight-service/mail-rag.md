@@ -10,6 +10,7 @@ permalink: /docs/career/copilot-insight-service/mail-rag/
 # Outlook 邮件 RAG
 
 ## Query 检索链路
+{: #query-retrieval-pipeline }
 
 `/insights/query` 接收自然语言 Query、绝对时间、用户 UUID 和当前邮件 Anchor。Insight Service 校验身份与参数后，将这些条件交给 Outlook Search，召回邮件候选，再执行对象级权限过滤、Conversation 去重和排序，最终向模型返回轻量候选。
 
@@ -26,6 +27,7 @@ Query 与过滤条件
 Query 阶段不读取所有邮件全文。候选只包含排序需要的元数据和 Snippet；模型确定需要某封邮件或某个 Conversation 后，才继续读取详细证据。
 
 ## 用户身份与权限过滤
+{: #permission-filtering }
 
 用户在 Outlook 中登录后，Copilot Runtime 代表当前用户调用 Insight Service，并转发 Microsoft Entra ID 用户 Token。模型不能在 Tool Call 中填写 Tenant ID、User ID 或权限。Insight Service 验证 Token 的签发方、Audience、有效期和 Scope，再从 Claims 中取得 Tenant ID 和 User Object ID。
 
@@ -50,6 +52,7 @@ Outlook 用户登录
 用户 UUID 只用于匹配邮件的 From、To 和 Cc，不授予读取权限。即使模型传入其他租户或用户的用户 UUID，最终仍只能搜索当前用户 Token 有权读取的邮件。
 
 ## 打分与排序
+{: #ranking }
 
 对象级权限过滤和硬性时间条件先执行，不满足条件的邮件不会参与打分。剩余候选使用确定性公式重排，Insight Service 不调用 LLM 或额外的 Reranker：
 
@@ -89,6 +92,7 @@ FinalScore =
 如果 200 条候选中仍没有足够证据，接口通过 `partial` 和 `warnings` 说明搜索范围受限。模型可以缩小时间、补充人员或改写 Query 后发起新请求，而不是无限翻页。
 
 ## 有界 Top-K
+{: #bounded-top-k }
 
 最终 **K 取 12**。我们在带相关邮件标注的 Query 集上比较 K=5、8、12 和 20：K 从 5 增加到 12 时 Recall@K 明显提高，能够覆盖同一问题涉及的多封邮件；从 12 增加到 20 后召回提升已经很小，但响应体、模型选择噪声和后续工具调用都会增加。因此线上固定返回 12 条，模型不能自行扩大 K。
 
