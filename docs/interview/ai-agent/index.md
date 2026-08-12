@@ -201,6 +201,9 @@ AI Agent 岗位既考查模型与 RAG 等应用基础，也考查 Runtime、工�
 ### [怎样从零设计并落地一个 Agent 系统？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-zero-to-production-methodology)
 {: #agent-zero-to-production-methodology }
 
+### [短任务和长任务的 Agent Runtime 怎样部署？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#short-long-agent-runtime-deployment)
+{: #short-long-agent-runtime-deployment }
+
 ### [生产级 Agent 架构怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#production-agent-architecture)
 {: #production-agent-architecture }
 

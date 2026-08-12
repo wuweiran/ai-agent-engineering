@@ -54,6 +54,45 @@ Claude Code 已经提供模型循环、文件编辑和终端环境。团队可�
 
 四部分不要求各自成为独立服务。短时客服建议可以直接附着在工单上；长任务则可能需要任务数据库和异步工作进程。工程师应根据任务时长、风险和恢复要求选择结构。
 
+## 短任务与长任务的部署边界
+{: #short-vs-long-agent-deployment }
+
+使用 LangChain、LangGraph 或自建 Runtime 时，框架代码通常运行在团队部署的应用中。任务能够在一次正常请求期限内完成、不需要等待用户或外部事件、进程退出后也无需恢复时，可以直接部署为 **Agent API Service**：
+
+```text
+客户端
+→ Agent API
+→ LangChain / LangGraph 模型—工具循环
+→ 业务工具与模型 API
+→ HTTP 或 SSE 返回结果
+```
+
+API 实例仍然可以是无状态的；Conversation 存入外部 Checkpointer 或数据库，多实例按 Conversation ID 读取。SSE 只负责逐步展示模型和工具进度，连接断开时可以按产品策略取消这次短任务。
+
+任务不一定因为运行了很多模型轮次就属于长任务。真正需要升级成异步架构的是它要**跨越当前 HTTP 请求继续存在**，例如等待用户确认、等待审批或平台执行，可能排队数分钟，实例重启后仍要继续，或者需要由其他 Worker 接管：
+
+```text
+客户端
+→ Agent API：校验请求并创建 Task
+→ Task DB：保存目标、状态和版本
+→ Queue：安排可执行工作
+→ Agent Worker：运行 LangChain / LangGraph
+→ Tool Service / Model API
+→ Event Store：保存进度
+→ SSE、轮询或 Webhook：向客户端交付状态
+```
+
+API 返回 `202 Accepted` 和 `task_id`，不保持原请求直到结束。Worker 每次取得任务都先读取持久状态，再从稳定检查点继续；队列只负责通知和调度，不能代替 Task 状态。等待用户确认时释放 Worker，确认事件到达后再重新入队。有副作用的 Tool Call 要记录幂等键和结果状态，超时后先查询真实结果。
+
+选择依据不是统一的“五秒或三十秒”阈值，而是四个问题：
+
+- 任务能否在产品允许的请求期限内稳定完成；
+- 是否要等待用户、审批、定时条件或外部平台；
+- 进程重启、断线或发布后是否必须恢复；
+- 是否需要排队、限流、取消、接管和独立审计。
+
+只要后面三项任一成立，就应优先使用持久 Task + Queue + Worker。短任务也可能调用多个工具，长任务也可能很快完成；区别是**任务的业务承诺是否超出当前请求和服务实例的生命周期**。通用异步可靠性见[异步任务]({{ site.baseurl }}/docs/backend/async-tasks/)，Agent 的持久状态见[Agent 任务的持久状态]({{ site.baseurl }}/docs/backend/llm-backend/agent-task-state/)。
+
 ## 成熟产品、SDK 和自建 Runtime
 
 团队还要决定哪些通用能力由外部平台提供。Dify 是可视化 LLM 应用平台的常见代表，LangChain 和 LangGraph 是代码式框架的常见代表；Agent SDK 适合需要厂商 Runtime 能力但仍要自定义产品入口和业务状态的应用。只有执行控制、隔离或平台复用要求足够强时，才值得自建 Runtime。具体边界见[Agent 实现方式]({{ site.baseurl }}/docs/ai-agent/agent-building/implementation-choice/)。

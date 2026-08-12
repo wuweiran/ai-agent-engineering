@@ -41,6 +41,18 @@ permalink: /docs/interview/ai-agent/quality-production/
 
 需求阶段至少应产出四项内容：**任务和成功标准、模型/程序/人工边界、工具与权威状态清单、评测样本与发布门槛**。技术选型只有能够解释这些约束，才是方案，而不是框架名称列表。
 
+## 短任务和长任务的 Agent Runtime 怎样部署？
+{: #short-long-agent-runtime-deployment }
+
+判断标准不是固定耗时，而是任务是否需要**跨越当前请求和服务实例继续存在**：
+
+- **短任务**：在 Agent API 内运行 LangChain 或 LangGraph 循环，通过 HTTP 或 SSE 返回结果；Conversation 可以存入外部 Checkpointer；
+- **长任务**：API 创建持久 Task 并返回 `202 + task_id`，队列调度 Worker 执行。等待确认或外部事件时释放 Worker，条件满足后重新入队恢复。
+
+需要重启恢复、排队接管或独立取消的任务应采用 **Task DB + Queue + Worker**。有副作用的 Tool Call 还要保存幂等键和结果状态，不能把 SSE 连接或队列消息当成任务状态。
+
+相关内容：[Agent 应用的部署边界]({{ site.baseurl }}/docs/ai-agent/agent-building/#short-vs-long-agent-deployment)。
+
 ## 生产级 Agent 架构怎样设计？
 {: #production-agent-architecture }
 
