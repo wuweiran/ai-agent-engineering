@@ -113,3 +113,16 @@ permalink: /docs/interview/ai-agent/llm/
 共同边界是：**只保证结果形状，不保证语义、权限和业务状态正确。**
 
 相关内容：[Prompt 与结构化输出]({{ site.baseurl }}/docs/llm/prompt-structured-output/)、[Agent 工具]({{ site.baseurl }}/docs/ai-agent/agent-design/tools/)。
+
+## 怎样使用缓存优化大模型应用？
+{: #llm-application-cache }
+
+三类缓存解决不同问题：
+
+- **精确结果缓存**：输入完全相同时复用最终结果；
+- **语义缓存**：在低风险、允许陈旧的场景复用相似问题的答案；
+- **Prompt Cache**：复用稳定提示词前缀的模型计算，但仍会执行本次生成。
+
+缓存键至少包含模型、Prompt、工具定义、权限和关键 Context 版本，并明确 TTL 与失效条件。动态业务状态、高风险回答和用户隔离内容不能只按问题文本复用。
+
+相关内容：[长 Context、压缩与缓存]({{ site.baseurl }}/docs/llm/context-cost-cache/)。

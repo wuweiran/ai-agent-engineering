@@ -9,224 +9,57 @@ permalink: /docs/interview/ai-agent/
 
 # AI Agent 常见面试题
 
-AI Agent 岗位既考查模型与 RAG 等应用基础，也考查 Runtime、工具、状态、规划、评测和生产可靠性。题库按知识职责拆成六个部分，答案以能够直接口述为目标，详细机制通过链接回到知识正文。
-
-## 题库结构
-
-- [大模型与应用基础]({{ site.baseurl }}/docs/interview/ai-agent/llm/)：多模态结构、面向 Agent 的模型训练、Prompt 与结构化输出；
-- [Agent 基础与工具]({{ site.baseurl }}/docs/interview/ai-agent/runtime/)：Agent 定义、ReAct、意图识别、LangChain、LangGraph、Function Calling、MCP、Skill 与工具失败；
-- [Agent Context 与记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/)：Dialog State、会话历史、短期与长期记忆、Context 组装与去噪；
-- [RAG 与知识检索]({{ site.baseurl }}/docs/interview/ai-agent/rag/)：Query 改写、Chunk、混合检索、Rerank、GraphRAG、评测与性能；
-- [Planning 与多 Agent]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/)：任务规划、工具依赖、协作模式与通信；
-- [Agent 质量、安全与生产运行]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/)：Harness、Prompt Injection、幻觉、量化指标、质量维度、优化、缓存与进度事件。
-
-## 原有问题索引
-
-以下短索引保留原页面的稳定锚点。已有书签仍会落到对应题目入口，新引用应直接指向子页面。
-
-### Agent 基础与工具
-
-### [什么是 AI Agent？它与普通模型调用有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-vs-llm-call)
-{: #agent-vs-llm-call }
-
-### [模型和 Agent 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#model-vs-agent)
-{: #model-vs-agent }
-
-### [Agent 的基本架构是什么？它和 LLM Chain 或 Workflow 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-vs-workflow)
-{: #agent-vs-workflow }
-
-### [ChatBot、RPA、Workflow 和 Agent 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#chatbot-rpa-workflow-agent)
-{: #chatbot-rpa-workflow-agent }
-
-### [什么是 ReAct？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#react-loop)
-{: #react-loop }
-
-### [ReAct、Act-only 和 Plan-then-Execute 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-execution-patterns)
-{: #agent-execution-patterns }
-
-### [什么是意图识别？它在 Agent 系统中处于什么环节？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-intent-recognition)
-{: #agent-intent-recognition }
-
-### [LangChain 和 LangGraph 分别解决什么问题？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#langchain-langgraph)
-{: #langchain-langgraph }
-
-### [什么是 Function Calling？模型会自己执行函数吗？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#function-calling)
-{: #function-calling }
-
-### [如何提升 Agent 的工具调用正确率？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-tool-calling-design)
-{: #agent-tool-calling-design }
-
-### [Function Calling、MCP、A2A 和 Skill 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#function-calling-mcp-a2a-skill)
-{: #function-calling-mcp-a2a-skill }
-
-### [本地工具、MCP 和 Skill 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#local-tool-mcp-skill)
-{: #local-tool-mcp-skill }
-
-### [MCP、A2A 和 ACP 分别解决什么问题？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#mcp-a2a-acp)
-{: #mcp-a2a-acp }
-
-### [工具调用失败后怎样设计降级？]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#tool-failure-fallback)
-{: #tool-failure-fallback }
-
-### 大模型与应用基础
-
-### [System Prompt 是什么？能否代替权限规则？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#system-prompt)
-{: #system-prompt }
-
-### [Prompt Engineering 和 Context Engineering 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#prompt-vs-context-engineering)
-{: #prompt-vs-context-engineering }
-
-### [怎样设计和优化 Prompt？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#prompt-optimization)
-{: #prompt-optimization }
-
-### [DSPy 适合解决什么问题？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#dspy-prompt-optimization)
-{: #dspy-prompt-optimization }
-
-### [CoT 和 Self-Consistency 分别解决什么问题？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#cot-self-consistency)
-{: #cot-self-consistency }
-
-### [JSON Mode、结构化输出和工具调用有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/llm/#structured-output-vs-tool-calling)
-{: #structured-output-vs-tool-calling }
-
-### Agent Context 与记忆
-
-### [Agent 的状态、短期记忆和长期记忆有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-state-and-memory)
-{: #agent-state-and-memory }
-
-### [Agent 的长期记忆怎样实现？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-long-term-memory)
-{: #agent-long-term-memory }
-
-### [多轮复杂对话中的 Dialog State 怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#dialog-state-design)
-{: #dialog-state-design }
-
-### [多轮对话的存储和记忆怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#conversation-storage-memory)
-{: #conversation-storage-memory }
-
-### [Context 超出限制时怎样处理？滑动窗口和摘要有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#context-overflow-window-summary)
-{: #context-overflow-window-summary }
-
-### [Agent 的记忆怎样更新和遗忘？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#memory-update-forgetting)
-{: #memory-update-forgetting }
-
-### [Claude Code 怎样管理当前 Context、会话记录和跨会话记忆？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#claude-code-context-memory)
-{: #claude-code-context-memory }
-
-### [Agent 怎样管理长短期记忆，并在多轮对话中保留关键事实？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#long-context-key-information)
-{: #long-context-key-information }
-
-### [Lost in the Middle 是什么？怎样缓解？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#lost-in-the-middle)
-{: #lost-in-the-middle }
-
-### [Context 噪声太多时怎样处理？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#context-noise-cleaning)
-{: #context-noise-cleaning }
-
-### [Agent Context Engineering 有哪些主要技术？管理策略怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-context-engineering-strategy)
-{: #agent-context-engineering-strategy }
-
-### [一次 Agent 调用的 Context 怎样组装？]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/#agent-context-assembly)
-{: #agent-context-assembly }
-
-### RAG 与知识检索
-
-### [RAG 的原理是什么？怎样缓解幻觉和知识过期？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-principle)
-{: #rag-principle }
-
-### [RAG 的完整流程是什么？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-end-to-end-flow)
-{: #rag-end-to-end-flow }
-
-### [企业知识库怎样构建，并接入 RAG？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-pipeline)
-{: #rag-pipeline }
-
-### [Naive RAG、Advanced RAG 和 GraphRAG 有什么区别？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#naive-advanced-graph-rag)
-{: #naive-advanced-graph-rag }
-
-### [GraphRAG 适合什么问题？什么时候不值得使用？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#graph-rag-use-cases)
-{: #graph-rag-use-cases }
-
-### [RAG 为什么需要 Query 改写？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-query-rewriting)
-{: #rag-query-rewriting }
-
-### [Query 改写有哪些常见策略？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-query-rewriting-strategies)
-{: #rag-query-rewriting-strategies }
-
-### [Query Drift 怎样发现和控制？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-query-drift)
-{: #rag-query-drift }
-
-### [Query 改写怎样控制延迟和成本？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-query-rewriting-cost)
-{: #rag-query-rewriting-cost }
-
-### [RAG 有哪些分块策略？Chunk 大小怎样选择？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-chunk-size)
-{: #rag-chunk-size }
-
-### [父子索引什么时候值得使用？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-parent-child-index)
-{: #rag-parent-child-index }
-
-### [文档怎样高效索引和检索？Retriever 应怎样选择？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#hybrid-search-rerank)
-{: #hybrid-search-rerank }
-
-### [Chunk 过多或质量参差时，怎样 Rerank 和融合？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-rerank-context-budget)
-{: #rag-rerank-context-budget }
-
-### [RAG 系统怎样评测？评测集包含什么？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-evaluation-dataset)
-{: #rag-evaluation-dataset }
-
-### [知识检索如何提高回答正确率？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-optimization)
-{: #rag-optimization }
-
-### [RAG 的端到端性能怎样优化？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#rag-performance)
-{: #rag-performance }
-
-### [为什么代码搜索不一定优先使用 RAG？]({{ site.baseurl }}/docs/interview/ai-agent/rag/#code-search-rag-vs-grep)
-{: #code-search-rag-vs-grep }
-
-### Planning 与多 Agent
-
-### [Agent 怎样进行任务规划？]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/#agent-planning)
-{: #agent-planning }
-
-### [多 Agent 有哪些常见协作模式？]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/#multi-agent-patterns)
-{: #multi-agent-patterns }
-
-### [Multi-Agent 系统怎样划分三层职责？]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/#multi-agent-three-layer-architecture)
-{: #multi-agent-three-layer-architecture }
-
-### [Agent 之间怎样传递信息？]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/#multi-agent-communication)
-{: #multi-agent-communication }
-
-### Agent 质量、安全与生产运行
-
-### [什么是 Agent Harness？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-harness)
-{: #agent-harness }
-
-### [怎样从零设计并落地一个 Agent 系统？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-zero-to-production-methodology)
-{: #agent-zero-to-production-methodology }
-
-### [短任务和长任务的 Agent Runtime 怎样部署？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#short-long-agent-runtime-deployment)
-{: #short-long-agent-runtime-deployment }
-
-### [生产级 Agent 架构怎样设计？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#production-agent-architecture)
-{: #production-agent-architecture }
-
-### [Prompt Injection 怎样防御？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#prompt-injection-defense)
-{: #prompt-injection-defense }
-
-### [什么是幻觉？怎样减少？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#hallucination)
-{: #hallucination }
-
-### [怎样评估 Agent 的执行效果？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-evaluation)
-{: #agent-evaluation }
-
-### [如何评估一个 AI Agent？有哪些可量化指标？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#online-agent-metrics)
-{: #online-agent-metrics }
-
-### [相关性、完整性和一致性分别衡量什么？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#relevance-completeness-consistency)
-{: #relevance-completeness-consistency }
-
-### [怎样证明一次 Agent 优化真的有效？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-optimization-evidence)
-{: #agent-optimization-evidence }
-
-### [怎样使用缓存优化大模型应用？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#llm-application-cache)
-{: #llm-application-cache }
-
-### [怎样使用 SSE 推送 Agent 进度？]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-sse-events)
-{: #agent-sse-events }
+AI Agent 岗位既考查模型与 RAG 等应用基础，也考查 Runtime、工具、状态、规划、评测和生产可靠性。题库按知识职责拆成七个部分，答案以能够直接口述为目标，详细机制通过链接回到知识正文。
+
+## AI Agent 面试关键词图谱
+
+```text
+用户提出目标
+→ 判断使用模型调用、固定 Workflow 还是 Agent
+→ Prompt 与 Context 提供规则和当前信息
+→ RAG、Memory 与工具连接外部知识和业务系统
+→ Runtime 驱动判断、行动与 Observation 循环
+→ Planning 或多 Agent 处理复杂任务
+→ 确定性软件守住权限、状态和副作用
+→ 评测、Trace 与生产运行形成质量闭环
+```
+
+- **任务边界与模型能力**
+  - **[大模型与应用基础]({{ site.baseurl }}/docs/interview/ai-agent/llm/)**：模型训练、System Prompt、Prompt Engineering、结构化输出与缓存
+  - **[Agent 基础与工具]({{ site.baseurl }}/docs/interview/ai-agent/runtime/)**：模型调用、Chain、Workflow、Agent、ReAct、意图识别与执行循环
+  - 这一层回答：**任务为什么需要 Agent，模型应该参与哪些开放判断。**
+
+- **信息、状态与知识**
+  - **[Agent Context 与记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/)**：Dialog State、会话历史、任务状态、短期和长期记忆、Context 裁剪与组装
+  - **[RAG 与知识检索]({{ site.baseurl }}/docs/interview/ai-agent/rag/)**：Query 改写、Chunk、混合检索、Rerank、GraphRAG、召回和排序评测
+  - 这一层回答：**模型本轮应该看到什么，信息从哪里取得，怎样控制噪声、时效和 Token。**
+
+- **动作、工具与协议**
+  - **[Agent 基础与工具]({{ site.baseurl }}/docs/interview/ai-agent/runtime/#agent-tools-protocols)**：Function Calling、Tool Schema、MCP、Skill、工具检索和失败降级
+  - 工具把模型决策连接到外部数据与动作；Runtime 和业务服务继续负责参数、权限、确认、幂等和真实结果。
+  - 这一层回答：**模型怎样提出动作，软件怎样安全地执行动作。**
+
+- **任务规划与协作**
+  - **[Planning 与多 Agent]({{ site.baseurl }}/docs/interview/ai-agent/planning-collaboration/)**：任务拆分、依赖、Replanning、协作模式和通信
+  - Planning 解决一个 Agent 内怎样安排步骤；Multi-Agent 只在并行、专业化或 Context 隔离收益大于协调成本时使用。
+  - 这一层回答：**复杂任务怎样分解、调整和协作完成。**
+
+- **系统设计与生产交付**
+  - **[Agent 系统设计与生产运行]({{ site.baseurl }}/docs/interview/ai-agent/system-production/)**：Harness、从零落地、短长任务部署、生产级架构和 SSE
+  - 短任务可以在 API 内运行；需要等待、恢复和接管的长任务使用持久 Task、Queue 和 Worker。
+  - 这一层回答：**Agent 怎样部署、保存状态、恢复执行并交付用户结果。**
+
+- **质量、安全与持续改进**
+  - **[Agent 质量与安全]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/)**：Prompt Injection、幻觉、任务结果、过程指标、安全门禁和优化证据
+  - 质量先看业务任务是否完成和严重风险，再看工具路径、延迟、Token 与成本；Trace 用于找到第一次偏离。
+  - 这一层回答：**怎样证明 Agent 正确、安全，并且新版本真的更好。**
+
+## 贯穿 Agent 工程的核心关系
+
+- **Prompt 与 Context**：Prompt 说明怎样做，Context 提供本轮做判断所需的信息；二者都不能代替权限与业务校验。
+- **Conversation、State 与 Memory**：Conversation 保存交互，State 保存当前任务如何继续，Memory 保存跨任务仍值得复用的信息。
+- **RAG 与工具**：RAG 取得外部证据，工具既可以查询也可以执行动作；返回内容进入 Context，但不自动成为权威业务状态。
+- **Planning 与 Workflow**：Planning 允许模型根据现场情况调整计划，Workflow 用确定性节点守住审批、状态转换和高风险流程。
+- **Runtime 与业务系统**：Runtime 管理模型和工具循环，领域系统掌握订单、邮件、支付等真实业务状态。
+- **评测与可观测性**：评测定义什么叫正确，Metrics 发现整体变化，Trace 解释单次任务为什么偏离。
+- **完成率与效率**：先保证任务完成和安全，再优化轮次、延迟、Token 与成本；快速失败不能算性能提升。

@@ -48,7 +48,7 @@ created_at: 2026-07-14T11:20:00Z
 
 ## SSE 传输有类型的事件
 
-[SSE]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-sse-events)（Server-Sent Events，服务器推送事件）是一种基于普通 HTTP 的单向流式协议。客户端发起请求后，服务器保持连接，并使用 `Content-Type: text/event-stream` 持续返回文本事件；每个事件由字段行组成，事件之间用空行分隔。
+[SSE]({{ site.baseurl }}/docs/interview/ai-agent/system-production/#agent-sse-events)（Server-Sent Events，服务器推送事件）是一种基于普通 HTTP 的单向流式协议。客户端发起请求后，服务器保持连接，并使用 `Content-Type: text/event-stream` 持续返回文本事件；每个事件由字段行组成，事件之间用空行分隔。
 
 浏览器可以使用 `EventSource` 接收 SSE，并在连接中断后自动重连。SSE 只支持服务器向客户端推送，用户提交问题、取消任务等客户端操作仍通过普通 HTTP 请求完成。因此，它适合模型文本和 Agent 进度这类以服务端输出为主的场景。
 

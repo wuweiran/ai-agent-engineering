@@ -20,7 +20,7 @@ Agent 先了解仓库规则和相关代码，模型选择下一步，运行时�
 
 “Agent”有时指一套可以反复工作的系统，有时指这套系统围绕一个目标进行的一次运行。
 
-Claude Code 是代码 Agent 产品。它包含 Claude 模型、组织执行的 Runtime，以及搜索文件、编辑代码、运行终端等工具。Runtime 也常被称为 [Agent Harness]({{ site.baseurl }}/docs/interview/ai-agent/quality-production/#agent-harness)：它包围模型，负责 Context、工具、权限、状态和循环控制。用户每次交付一个目标，就启动一次具体任务。
+Claude Code 是代码 Agent 产品。它包含 Claude 模型、组织执行的 Runtime，以及搜索文件、编辑代码、运行终端等工具。Runtime 也常被称为 [Agent Harness]({{ site.baseurl }}/docs/interview/ai-agent/system-production/#agent-harness)：它包围模型，负责 Context、工具、权限、状态和循环控制。用户每次交付一个目标，就启动一次具体任务。
 
 ```text
 Claude Code：可反复接收目标的 Agent 系统

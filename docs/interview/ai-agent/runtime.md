@@ -16,50 +16,28 @@ permalink: /docs/interview/ai-agent/runtime/
 ## 什么是 AI Agent？它与普通模型调用有什么区别？
 {: #agent-vs-llm-call }
 
-**普通模型调用完成一次输入输出；Agent 围绕目标多轮判断和行动。**
+**模型是推理组件，普通模型调用完成一次输入输出；Agent 是由模型、Runtime、工具、状态和执行边界组成的完整系统，围绕目标持续判断和行动。**
 
 - 普通调用的后续步骤通常由应用预先安排；
 - Agent 会根据工具和环境反馈选择下一步；
 - Runtime 负责执行、状态、权限、预算和终止。
 
-工具、记忆和规划是常见能力，但不是判断 Agent 的固定清单。关键在于：**模型的选择是否会根据现场结果改变执行路径。**
-
-相关内容：[LLM 应用、固定工作流与 Agent]({{ site.baseurl }}/docs/ai-agent/llm-workflow-agent/)。
-
-## 模型和 Agent 有什么区别？
+工具、记忆和规划是常见能力，但不是判断 Agent 的固定清单。关键在于：**模型的选择是否会根据现场结果改变执行路径。**模型能力决定哪些判断可能完成，Agent 工程决定这些判断能否安全、持续地成为真实结果。
 {: #model-vs-agent }
-
-- **模型**：根据 Context 生成文本或结构化请求的推理组件；
-- **Agent**：由模型、Runtime、工具、状态和执行边界组成的完整系统，能够读取环境并影响外部世界。
-
-模型能力决定哪些判断可能完成，Agent 工程决定这些判断能否**安全、持续地成为真实结果**。
-
-相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)。
-
-## Agent 的基本架构是什么？它和 LLM Chain 或 Workflow 有什么区别？
-{: #agent-vs-workflow }
-
-Agent 的基本架构包括：
-
-1. **模型**：理解目标并提出下一步；
-2. **Context 与状态**：提供当前信息并保存任务进度；
-3. **工具**：连接外部数据与动作；
-4. **Runtime 或 Harness**：执行工具，控制权限、预算和终止；
-5. **执行循环**：根据 Observation 持续调整路径。
-
-与 Chain 或 Workflow 的核心区别是**谁决定路径**：Workflow 的步骤和分支由程序预定义；Agent 的路径会根据运行中的观察动态变化。生产系统常把二者组合：确定性流程管理权限、审批和业务状态，Agent 处理难以穷举的判断。
 
 相关内容：[LLM 应用、固定工作流与 Agent]({{ site.baseurl }}/docs/ai-agent/llm-workflow-agent/)、[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)。
 
-## ChatBot、RPA、Workflow 和 Agent 有什么区别？
+## ChatBot、LLM Chain、Workflow、RPA 和 Agent 有什么区别？
 {: #chatbot-rpa-workflow-agent }
+{: #agent-vs-workflow }
 
-- **ChatBot**：描述对话交互形式；
+- **ChatBot**：描述对话交互形式，内部可以是模型调用、Workflow 或 Agent；
+- **LLM Chain**：按代码预设的顺序串联模型、Prompt 和处理步骤；
+- **Workflow**：按预设节点和条件推进业务流程；
 - **RPA**：按既定规则模拟人在界面上的操作；
-- **Workflow**：按预设节点和条件推进任务；
-- **Agent**：让模型根据现场反馈参与决定路径。
+- **Agent**：让模型根据现场反馈参与决定下一步路径。
 
-它们不是互斥层级。聊天界面可以承载 Workflow 或 Agent，Agent 也可以调用 RPA 操作缺少 API 的旧系统。
+核心区别是**谁决定路径**：Chain 和 Workflow 由程序预定义，Agent 会根据 Observation 动态调整。它们可以组合，例如 Agent 调用 RPA 操作旧系统，再由 Workflow 管理审批和业务状态。
 
 相关内容：[LLM 应用、固定工作流与 Agent]({{ site.baseurl }}/docs/ai-agent/llm-workflow-agent/)。
 
@@ -68,16 +46,31 @@ Agent 的基本架构包括：
 
 **ReAct 是“判断下一步 → 执行动作 → 观察结果 → 继续判断”的循环。**它让模型根据环境反馈调整路径，不要求向用户展示内部推理。
 
-工程上，一轮通常包括：
+工程上，Runtime 反复取得模型提出的下一步动作，执行后再把 Observation 交回模型：
 
-1. 模型返回文本和 Tool Call；
-2. Runtime 校验并执行工具；
-3. Tool Result 通过调用 ID 与原请求关联；
-4. 模型读取结果并决定下一步。
+```text
+state = 初始化目标、Context 和任务状态
 
-工具结果使用独立 `tool` 角色，还是 User 消息中的 `tool_result` 内容块，取决于模型 API，不能脱离供应商协议断言只有一种格式。
+重复直到超过轮数、Token 或 Deadline：
+    decision = 模型决定下一步(state)
 
-相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)。
+    如果 decision 是 Action：
+        校验动作、参数、权限和确认状态
+        observation = 执行动作(decision)
+        state = 写入 observation 并更新任务状态
+        继续循环
+
+    如果 decision 是 Clarify 或 Wait：
+        保存状态并等待用户或外部事件
+
+    如果 decision 是 Final：
+        校验任务完成条件
+        满足则返回结果，否则继续或失败
+```
+
+Action 不一定是 Tool Call，也可以是调用 API、执行代码、操作界面或请求人工确认；结构化 Tool Calling 只是现代 Runtime 最常用的动作协议。使用 Tool Calling 时，程序还要用 `call_id` 关联 Tool Result。
+
+模型没有返回 Tool Call 也不自动表示任务完成。Runtime 要根据决策类型、停止原因和任务完成条件，区分最终回答、澄清、等待、拒绝和异常终止。相关内容：[Agent 任务与运行循环]({{ site.baseurl }}/docs/ai-agent/agent-runtime/)。
 
 ## ReAct、Act-only 和 Plan-then-Execute 有什么区别？
 {: #agent-execution-patterns }
@@ -152,6 +145,7 @@ Agent 的基本架构包括：
 相关内容：[Agent 执行与终止]({{ site.baseurl }}/docs/ai-agent/agent-design/execution-control/)。
 
 ## 工具与协议
+{: #agent-tools-protocols }
 
 ## 什么是 Function Calling？模型会自己执行函数吗？
 {: #function-calling }
