@@ -30,7 +30,7 @@ AI Agent 岗位既考查模型与 RAG 等应用基础，也考查 Runtime、工�
   - 这一层回答：**任务为什么需要 Agent，模型应该参与哪些开放判断。**
 
 - **信息、状态与知识**
-  - **[Agent Context 与记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/)**：Dialog State、会话历史、任务状态、短期和长期记忆、Context 裁剪与组装
+  - **[Agent Context 与记忆]({{ site.baseurl }}/docs/interview/ai-agent/context-memory/)**：会话历史、结构化任务状态、短期和长期记忆、Context 裁剪与组装
   - **[RAG 与知识检索]({{ site.baseurl }}/docs/interview/ai-agent/rag/)**：Query 改写、Chunk、混合检索、Rerank、GraphRAG、召回和排序评测
   - 这一层回答：**模型本轮应该看到什么，信息从哪里取得，怎样控制噪声、时效和 Token。**
 
