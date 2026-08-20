@@ -36,6 +36,12 @@ permalink: /docs/career/
 
 这套数据最初由各功能开发者分散添加，后来集中维护以复用不断增长的邮件集合；再通过内部 LLM 平台以 eyes-off 方式脱敏真实用户 Utterance，并优先复用能关联较多 Query 的热点 Email，改善开发者构造样例无法反映真实输入分布的问题。Agent 结果通过 LM Checklist 和邮件业务 Metric 评分。
 
+## 2025.11—2026.02　[My Outlook Agent 部署]({{ site.baseurl }}/docs/career/my-outlook-agent/)
+
+在评测工作期间短期参与 My Outlook 开发。My Outlook 会扫描邮件、日历和组织信号，生成 Briefing、Catch-up 和工作建议；用户也可以继续与 Agent 对话，完成查询、生成和执行类任务。
+
+我参与 Agent 的部署和运行链路。MyOutlook（POS）Service 在 AKS 中承载在线 Agent Loop、动态 Context 组装和任务编排，Deep Scan、Synthesis、LLM 与 Graph/API Worker 负责异步执行。工作重点是 Service—Queue—Worker 的任务契约、持久状态、幂等重试、独立扩缩容、灰度发布和生产观测，使长任务能够跨请求、进程重启和依赖限流继续执行。
+
 ## 2026.03—至今　[Copilot Bake-off]({{ site.baseurl }}/docs/career/copilot-bakeoff/)
 
 2026 年 3 月开始参与 Copilot Bake-off，作为 Copilot Evaluation 主线下的专项对比工作。核心实现是使用 Playwright 操作 Gmail Gemini 页面并采集 Response，内部称为 scraping；同时把 Outlook Grounding Data 导入 Google Workspace，维护 User、Email 和 Golden Set Mapping。
@@ -49,5 +55,7 @@ Purview Workflow Expression 与 Logic Apps 集成
 → 在固定流程中接入模型
 → 为 Outlook Copilot 提供 Context
 → 为 Copilot Agent 增加用户任务能力
-→ 建立 Golden Set 和产品对比评测
+→ 建立 Golden Set 与回归评测
+→ 参与 My Outlook 自托管 Agent 部署
+→ 建设产品对比评测
 ```

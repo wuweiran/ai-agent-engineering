@@ -8,7 +8,7 @@ permalink: /docs/career/self-introduction/
 
 # 面试自我介绍
 
-我一直从事后端开发工作。在美团餐饮 SaaS 技术部，我参与商家侧核心系统建设，积累了复杂 B 端业务建模、系统演进和性能治理经验。在阿里巴巴淘系技术部，我负责核心订单任务调度系统，并主导过跨团队项目，积累了大规模 C 端系统建设和协作交付经验。加入微软后，我将这些经验用于 Azure 企业级产品，主导 Purview Workflow Expression 等重要领域建设。转向 AI Agent 后，我先后负责搜索型 RAG、生产级 Agent、Agent 评测体系和竞品自动化评测系统，具备从业务场景设计、Context 与工具编排、任务执行与容错到评测上线的端到端工程经验，能够独立承担复杂 Agent 项目，推动方案从业务需求走到生产落地，并通过评测和线上反馈持续提升任务完成率等业务指标。
+我一直从事后端开发工作。在美团餐饮 SaaS 技术部，我参与商家侧核心系统建设，积累了复杂 B 端业务建模、系统演进和性能治理经验。在阿里巴巴淘系技术部，我负责核心订单任务调度系统，并主导过跨团队项目，积累了大规模 C 端系统建设和协作交付经验。加入微软后，我将这些经验用于 Azure 企业级产品，主导 Purview Workflow Expression 等重要领域建设。转向 AI Agent 后，我先后负责搜索型 RAG、生产级 Agent、Agent 评测体系和竞品自动化评测系统，也参与过自托管 Agent 的 Service + Worker 部署，具备从业务场景设计、Context 与工具编排、任务执行与容错到部署评测的端到端工程经验，能够独立承担复杂 Agent 项目，推动方案从业务需求走到生产落地，并通过评测和线上反馈持续提升任务完成率等业务指标。
 
 ## 各阶段关注重点
 
@@ -41,10 +41,18 @@ permalink: /docs/career/self-introduction/
 ### Outlook Copilot Agent
 
 - 从用户任务出发设计划词解释、附件总结和邮箱整理三个场景；
-- 通过 Agent Definition、Instructions、Context Policy 和 Plugin Schema 组织模型行为与工具边界；
-- 动态装配和裁剪 Context，管理多轮状态、计划确认和 Token Budget；
+- 通过 Agent Definition、Instructions、Sydney Context Config 和 Plugin Schema 组织模型行为与工具边界；
+- 通过 Sydney Context Config 和按需工具调用控制每个场景的输入范围与 Token；
 - 处理版本冲突、部分成功和结果未知，使写操作可确认、可恢复且不会重复执行；
 - 通过线上任务漏斗定位损失并持续提升邮箱整理任务完成率。
+
+### My Outlook Agent 部署
+
+- 参与 My Outlook 自托管 Agent 的 Service + Worker 部署链路；
+- 在 AKS 上拆分在线 Agent Loop 与 Deep Scan、Synthesis、LLM 和 Graph/API Worker；
+- 在 Agent Loop 调用模型前按任务阶段和 Token Budget 动态组装 Context，裁剪旧对话和已消费的 Worker Result；
+- 通过持久 Task、队列、幂等和 Lease 支持长任务恢复，避免 Worker 重启导致重复执行；
+- 按在线请求和后台队列分别扩缩容，并用端到端 Trace、灰度和回滚保障生产运行。
 
 ### Agent 评测与竞品对比
 

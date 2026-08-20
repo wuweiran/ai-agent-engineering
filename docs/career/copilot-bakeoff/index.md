@@ -2,7 +2,7 @@
 layout: default
 title: Copilot Bake-off
 parent: 工作经历
-nav_order: 5
+nav_order: 6
 has_children: true
 permalink: /docs/career/copilot-bakeoff/
 ---

@@ -22,8 +22,7 @@ agent-definition/
 │  ├─ selection.md
 │  ├─ attachment.md
 │  └─ mailbox-organization.md
-├─ plugins/outlook-plugin.json
-└─ context-policy.yaml
+└─ plugins/outlook-plugin.json
 ```
 
 `declarative-agent.json` 保存 Agent 身份、内置能力和 Plugin 引用，`instructions` 在构建时由四个规则文件合并生成：
@@ -118,37 +117,9 @@ WHEN the user asks to organize mail:
 }
 ```
 
-`context-policy.yaml` 是 pre-model Context Hook 使用的配置，控制不同场景的 Sydney 字段、每类 Context 的优先级和替换方式：
+构建工具按 `common → selection → attachment → mailbox-organization` 合并 Instructions，并执行三类检查：Manifest 字段和长度是否合法；Instructions 引用的 Function 是否都在 Plugin 中；写 Function 是否仍绑定平台确认。生成包带 Definition 和 Plugin 版本，Trace 记录实际加载的版本。
 
-```yaml
-modelInputBudget: 16000
-scenarios:
-  selection:
-    sydneyFields: [entryType, selectedText, surroundingParagraphs, subject, sender, sentAt, messageId]
-  attachment:
-    sydneyFields: [entryType, messageId, attachmentId]
-  mailboxOrganization:
-    sydneyFields: [entryType, currentFolder]
-priority:
-  - instructions_and_tools
-  - confirmed_task_state
-  - recent_turns
-  - current_evidence
-  - active_tool_results
-  - history_summary
-replacementKeys:
-  message_evidence: messageId
-  plan: planVersion
-  tool_result: [functionName, resourceId]
-summary:
-  triggerTokens: 14000
-  keepRecentTurns: 4
-  fields: [confirmedFacts, pendingItems, unresolvedQuestions]
-```
-
-构建工具按 `common → selection → attachment → mailbox-organization` 合并 Instructions，并执行四类检查：Manifest 字段和长度是否合法；Instructions 引用的 Function 是否都在 Plugin 中；Context Policy 中的 Sydney 字段是否在允许列表；写 Function 是否仍绑定平台确认。生成包带 Definition、Plugin 和 Context Policy 版本，Trace 记录实际加载的版本。
-
-这里自然语言只负责模型的开放判断。参数类型由 Function Schema 约束，本轮可见信息由 Context Policy 控制，邮件权限由 BizChat 身份和 Extension 校验，确认状态由 Microsoft 365 Copilot Runtime 保存，资源版本和真实执行结果由 Extension 返回。任何一处修改都先跑对应场景切片，再跑三个场景的全量 Golden Set。
+这里自然语言只负责模型的开放判断。参数类型由 Function Schema 约束，界面 Context 由 Sydney Config 声明，邮件权限由 BizChat 身份和 Extension 校验，确认状态由 Microsoft 365 Copilot Runtime 保存，资源版本和真实执行结果由 Extension 返回。任何一处修改都先跑对应场景切片，再跑三个场景的全量 Golden Set。
 
 ## 从头设计一项能力
 {: #prompt-context-design }
@@ -185,7 +156,7 @@ Agent 目标和回答边界
 6. 根据 version_conflict、partial_success 和 result_unknown 分别处理，不能把未知结果说成成功。
 ```
 
-这里 Prompt Engineering 负责**决策规则和行为边界**，Context Engineering 负责**每轮让模型看到哪些事实，以及何时用新结果替换旧结果**；二者要与 Function Description、参数 Schema、平台确认和 Extension 权限一起工作。
+这里 Prompt Engineering 负责**决策规则和行为边界**，Context Engineering 负责**声明入口需要的界面事实，并通过候选上限和按需读取控制新增 Context**；Conversation 历史和 Plan 的组装由平台 Runtime 管理。它们还要与 Function Description、参数 Schema、平台确认和 Extension 权限一起工作。
 
 ## 三类 Context
 
@@ -228,56 +199,18 @@ Context Config 只要求 Sydney 注入当前 Folder。初始 Context 再加上�
 
 Tenant、User、Token 和服务端候选上限不让模型填写，由 BizChat 和 Extension 从当前用户请求中取得。
 
-## 动态 Context 装配与裁剪
+## Context 最小化
 {: #context-minimization }
 
-动态裁剪分为两步。Sydney Context Config 根据入口类型选择本轮需要采集的界面信息；BizChat 提供的 **pre-model Context Hook** 在每次模型调用前读取 Conversation、当前 Plan、确认状态和 Tool Result，再根据场景、任务阶段与 Token Budget 重建模型本轮实际看到的 Context。
+这个项目能控制的是 Sydney Context Config、按需工具调用和返回给模型的候选规模，不是 Microsoft 365 Copilot Runtime 内部的完整 Conversation 裁剪。
 
-### Hook 的形式
+- 划词解释只请求选区、前后段落和必要邮件元数据；
+- 附件总结只注入 Message ID 与 Attachment ID，再按需调用附件提取 Extension；
+- 邮箱整理首轮只使用当前 Folder 和用户目标，搜索最多返回 Top 12 个带 Snippet 的候选；
+- Snippet 足够时不读取邮件正文，已经知道 Message ID 时不重复搜索；
+- Tool Result 只返回模型继续判断需要的字段，完整邮件和附件仍保留在 Outlook 中。
 
-这个 Hook 不是项目单独部署的 HTTP 服务，而是 BizChat Agent 注册配置中绑定的内部 **Context Processor**。项目实现一个处理器并随 Agent 配置包发布，BizChat 在首轮请求、Tool Result 返回和用户继续对话时调用它。
-
-Hook 的输入是平台提供的结构化对象：
-
-```text
-ContextHookInput
-├─ conversationId、entryType 和当前用户输入
-├─ Sydney 注入的 Message、Selection、Attachment 或 Folder Context
-├─ Conversation 中的近期消息和较早历史
-├─ 当前目标、已确认条件、Plan 和确认状态
-├─ 本轮及历史 Tool Result
-└─ 模型输入 Token Budget
-```
-
-项目返回按优先级组织的 Context Blocks，而不是修改平台数据库中的 Conversation：
-
-```text
-ContextHookOutput
-├─ task_state：当前目标、约束、Plan 和确认状态
-├─ recent_turns：近期对话原文
-├─ evidence：当前选区、Snippet 或按需读取的邮件详情
-├─ tool_state：仍影响下一步的 Tool Result
-├─ history_summary：超预算时生成的早期事实与待办摘要
-└─ diagnostics：保留、替换和裁剪的 Token 数量
-```
-
-我控制的是处理器代码和每个场景的 Context Policy，包括各类 Block 的优先级、Token 上限、替换键与摘要触发阈值；BizChat 负责调用 Hook、提供平台状态、执行 Token 计数，并把输出放进本轮模型请求。完整 Conversation 和原始 Tool Trace 仍由平台保存，不会因为本轮裁剪而删除。
-
-### 裁剪规则
-
-第一步控制新增的界面 Context：划词解释只注入选区、前后段落和必要邮件元数据；附件总结只注入 Message ID 与 Attachment ID；邮箱整理首轮只注入当前 Folder 和用户目标。搜索工具最多返回 Top 12 个带 Snippet 的候选，只有 Snippet 不足以判断时才按 Message ID 读取详情。
-
-第二步处理多轮历史。Context Hook 将信息分成三类：
-
-- **固定保留**：当前用户目标、已确认条件、当前 Plan、资源 ID、确认状态和最近执行结果；
-- **按阶段替换**：邮件详情读取成功后删除对应搜索候选，计划更新后删除旧 Plan，新的 Tool Result 替换同一对象的旧结果；
-- **超预算压缩**：删除重复 Citation、过期候选和无关 Tool Result，再把较早对话压缩成已确认事实、待办和未解决问题，近期交互保留原文。
-
-处理器按以下顺序分配预算：先保留 System Instructions 和工具 Schema，再保留任务状态、近期对话和当前证据；剩余预算才给历史摘要和低优先级候选。邮箱详情按 Message ID 作为替换键，新详情覆盖同一邮件的旧 Snippet；Plan 按版本作为替换键，新 Plan 生效后旧 Plan 不再进入本轮 Context。摘要只提取已经确认的事实，不把模型推测写成任务状态。
-
-邮件和附件正文仍以 Outlook 为权威来源。裁剪后如果后续步骤需要原始证据，Agent 根据 Message ID 或 Attachment ID 重新读取，不能只依赖摘要继续执行。Context Hook 的输出只影响本轮模型请求，不删除审计用的完整 Conversation Trace。
-
-这套策略使每条多轮邮箱整理 Scenario 中所有模型调用的平均总输入从 **46,000 Token 降到 34,000 Token**，下降 **26%**。它与 LangChain 在模型调用前使用 Middleware 重建 messages 的思路相同，只是执行位置位于 BizChat 托管的 Declarative Agent Runtime。
+因此这里的 Token 优化来自**少注入、少召回和按需读取**。Conversation 历史怎样压缩、旧 Tool Result 怎样淘汰以及模型每轮最终看到哪些历史消息，由 Microsoft 365 Copilot Runtime 管理，不写成这个场景项目实现了 pre-model Hook。自托管 Runtime 中真正由应用控制的动态 Context 装配与裁剪，见 [My Outlook Agent 部署]({{ site.baseurl }}/docs/career/my-outlook-agent/#dynamic-context-assembly)。
 
 ## 一次根据评测完成的优化
 {: #evaluation-driven-optimization }
