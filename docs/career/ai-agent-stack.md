@@ -42,14 +42,14 @@ permalink: /docs/career/ai-agent-stack/
 | --- | --- | --- | --- |
 | 固定 Workflow 与模型调用 | Microsoft Purview 工作流 | Azure Logic Apps、Workflow Definition、Scala + ZIO、Azure OpenAI Chat Completions、GPT-3.5 Turbo | Expression 领域 Owner；定义 EBNF、AST、Validator 和 Evaluator；接入 Workflow 概括与 Definition 生成 |
 | Prompt 与结构化输出 | Purview；Outlook Copilot Agent | System Prompt、Few-shot、Action Catalog、JSON Validator；Agent Instructions、场景 Instructions、工具 Description | 组装模型输入、限制可用能力、验证模型输出；按 Outlook 场景拆分 Prompt 并处理工具结果 |
-| RAG 与 Context | Outlook Copilot Insight Service；Outlook Copilot Agent；My Outlook | Outlook Search、Microsoft Graph、OBO、搜索型 RAG、分页召回、Top 12、Citation、Sydney Context Config；Context Builder、Task State、SDS Artifact | 负责邮件召回和场景 Context 配置；在 My Outlook 参与按任务阶段与 Token Budget 动态组装和裁剪 Model Input |
-| Agent Runtime | Outlook Copilot Agent；My Outlook | Microsoft 365 Copilot Declarative Agent 平台；MyOutlook POS Service、Agent Loop、Task State | 在 Declarative Agent 已有 Runtime 上配置场景能力；在 My Outlook 参与自托管 Agent 的 Service—Worker 部署与运行链路 |
-| Tool Calling | Insight Service；Outlook Copilot Agent；My Outlook | Copilot Extension、Tool Schema、Tool Call / Tool Result、附件提取、邮件搜索与写入工具；Graph/API Worker | 参与搜索 Extension 契约和场景工具设计；在 My Outlook 处理 Agent Loop 与后台执行结果的任务契约 |
+| RAG 与 Context | Outlook Copilot Insight Service；Outlook Copilot Agent；My Outlook | Outlook Search、Microsoft Graph、OBO、搜索型 RAG、分页召回、Top 12、Citation、Sydney Context Config；Context Builder、Task State、SDS Artifact | 负责邮件召回和场景 Context 配置；在 My Outlook 排查 Context 组装与裁剪异常 |
+| Agent Runtime | Outlook Copilot Agent；My Outlook | Microsoft 365 Copilot Declarative Agent 平台；MyOutlook POS Service、Agent Loop、Task State | 在 Declarative Agent 已有 Runtime 上配置场景能力；在 My Outlook 维护自托管 Agent 的 Service—Worker 运行链路并修复恢复 Bug |
+| Tool Calling | Insight Service；Outlook Copilot Agent；My Outlook | Copilot Extension、Tool Schema、Tool Call / Tool Result、附件提取、邮件搜索与写入工具；Graph/API Worker | 参与搜索 Extension 契约和场景工具设计；在 My Outlook 排查后台执行结果与任务状态不一致问题 |
 | 多轮状态与任务执行 | Outlook Copilot Agent | 平台 Conversation 与 Plan、结构化任务约束、资源版本、Operation ID | 处理用户修改范围、重新计划、部分成功、结果未知和任务终止；没有建设跨任务长期记忆 |
 | 安全与权限 | Insight Service；Outlook Copilot Agent | Microsoft Entra ID、OBO、`Mail.Read` / `Mail.ReadWrite`、对象级权限、平台确认 | 实现或接入权限过滤；限制工具可见性，确保写操作走确认和 Extension 校验 |
 | Agent Evaluation | Copilot Evaluation 与 Golden Set | SEVAL、Query Set、CIQ、Grounding Data、Assertion、LM Checklist、业务 Metrics | 持续维护评测资产、真实脱敏 Utterance、Baseline/SDF 回归、质量门禁和 Trace 定位 |
 | 竞品评测 | Copilot Bake-off | Playwright scraping、Google Workspace ingestion、User/Email/Golden Set Mapping、SEVAL LM Checklist | 搭建 Gmail Gemini 自动执行和跨系统映射，生成 Query 级产品差距并回流常规回归 |
-| 生产后端 | Purview；Insight Service；My Outlook；Bake-off | Scala + ZIO、Java 21 + Spring Boot 3 + WebFlux、AKS、Service Bus、Task Store、Playwright Worker | 后端服务开发；参与 My Outlook Service + Worker 部署、任务恢复、扩缩容与生产观测；处理性能、容量、灰度和故障排查 |
+| 生产后端 | Purview；Insight Service；My Outlook；Bake-off | Scala + ZIO、Java 21 + Spring Boot 3 + WebFlux、AKS、Service Bus、Task Store、Playwright Worker | 后端服务开发；参与 My Outlook Service + Worker 部署维护，通过 Trace 修复持久化、幂等和任务恢复问题 |
 
 ## 项目在 Agent 链路中的位置
 

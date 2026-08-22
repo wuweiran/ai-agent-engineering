@@ -9,23 +9,70 @@ permalink: /docs/career/my-outlook-agent/aks-production/
 
 # AKS 部署与生产运行
 
-这部分展开 [My Outlook 项目概览]({{ site.baseurl }}/docs/career/my-outlook-agent/)中的 AKS 部署，重点说明 Workload 隔离、依赖配额、扩缩容、灰度和事故处理。
+这部分先说明 [My Outlook 项目概览]({{ site.baseurl }}/docs/career/my-outlook-agent/)中的 Component 在 AKS 里分别以什么形式运行，以及代码怎样变成实际运行的 Pod。后半部分再展开扩缩容、灰度、观测和事故处理。
 
-## 为什么 Service 和 Worker 分开部署
+## My Outlook 在 AKS 中是什么样
 
-POS Service 面向 Outlook Client，重点是稳定接入和快速返回；Deep Scan、Synthesis、LLM 与 Graph/API Worker 的资源形态和依赖配额不同。如果放在同一个 Deployment 中，扫描任务的 CPU 和内存峰值、模型调用的长等待以及 Graph 限流会共同影响在线 Agent 请求，也无法针对真实瓶颈独立扩容。
+AKS 是 Azure 托管的 Kubernetes。My Outlook 并不是把所有 Component 放进一个进程，而是把 POS Service 和不同类型的 Worker 分成多个独立 Deployment。
 
-因此它们分别部署为 AKS Deployment：
+```text
+Outlook Client
+  ↓
+Kubernetes Service：稳定的集群内访问地址
+  ↓
+POS Service Deployment
+└─ 多个 POS Service Pod：Agent Loop、Context Builder、任务编排
+  ↓
+Service Bus / Task Store：位于 AKS 外部
+  ↓
+Worker Deployments：按 POS 提供的 Step 参数执行
+├─ Deep Scan Worker Pool：内置 Deep Scan Handler
+├─ Synthesis Worker Pool：内置 Synthesis Handler
+├─ LLM Worker Pool：调用模型 Endpoint
+└─ Graph/API Worker Pool：内置业务 API Handler
+  ↓
+SDS / Annotation Store / Microsoft 365 APIs：位于 AKS 外部
+```
 
-| Workload | 主要资源和限制 | 扩缩容信号 |
+各 Component 与 Kubernetes 对象的对应关系是：
+
+| My Outlook Component | 在 AKS 中的形式 | 说明 |
 | --- | --- | --- |
-| POS Service | 请求并发、CPU、连接数、Agent Loop 延迟 | RPS、并发请求、P95、CPU |
-| Deep Scan Worker | CPU、内存、Graph 读取吞吐 | Queue Depth、Oldest Message Age、CPU/Memory |
-| Synthesis Worker | Artifact 数量、模型和 CPU | Queue Depth、处理时长、LLM 配额 |
-| LLM Worker | 模型 Endpoint 并发与 Token | In-flight Calls、429、Token/minute |
-| Graph/API Worker | Graph 配额和网络连接 | In-flight Requests、429、Retry-After |
+| **POS Service** | `Deployment` + `Pod` + `Service` | Deployment 管理 POS Service Pod；Service 为这些 Pod 提供稳定地址 |
+| **Deep Scan Worker Pool** | 独立 `Deployment` + `Pod` | 按 POS 提供的参数调用 Deep Scan Handler |
+| **Synthesis Worker Pool** | 独立 `Deployment` + `Pod` | 按 POS 提供的参数调用 Synthesis Handler |
+| **LLM Worker Pool** | 独立 `Deployment` + `Pod` | 执行 POS 指定的模型调用参数 |
+| **Graph/API Worker Pool** | 独立 `Deployment` + `Pod` | 执行 POS 指定的 Microsoft 365 或业务 API 调用 |
 
-**扩容目标不是让队列永远为零，而是在下游配额允许范围内控制排队时间。**模型或 Graph 已经限流时，盲目增加 Worker 只会制造更多并发请求。
+这些 Worker Pool 按资源类型和依赖隔离，但不负责业务编排。业务目标、Step 类型、工具名称和完整参数都由 POS Service 写入 Step；Worker 只调用内置 Handler 并返回结构化 Result。
+
+**Region 容量快照：My Outlook 尚未 GA、用户量较小时，每个 Region 常态运行约 3 个 POS Service Pod 和 12 个 Worker Pod，其中 Deep Scan 4 个、Synthesis 2 个、LLM 2 个、Graph/API 4 个。**实际副本数会随在线请求和队列负载变化。
+
+AKS 之外还有几类托管依赖：Azure Service Bus 传递 Worker 调度消息，Conversation Store 保存对话，Task Store 保存任务执行状态，Annotation Store 保存 Finding，SDS 保存生成产物，Microsoft 365 保存邮件和日历等权威业务数据。POS Service 和 Worker 通过 Endpoint 与托管身份访问这些系统；完整持久化关系见 [一个 Agent Run 的数据保存在哪里]({{ site.baseurl }}/docs/career/my-outlook-agent/runtime-task/#一个-agent-run-的数据保存在哪里)。
+
+这里最重要的三个 Kubernetes 概念是：
+
+- **Pod**：一个实际运行的应用实例，例如一个 POS Service 实例或一个 Deep Scan Worker 实例；
+- **Deployment**：管理一组同类 Pod，声明使用哪个镜像、运行多少副本以及怎样滚动发布；
+- **Service**：为一组需要接收网络请求的 Pod 提供稳定地址。POS Service 需要 Kubernetes Service，主动消费队列的 Worker 不需要。
+
+## 从代码到 Pod 怎样部署
+
+部署过程可以沿下面这条链路理解：
+
+```text
+Service / Worker 代码
+→ 构建 Docker 镜像
+→ 推送到 Azure Container Registry
+→ Helm 将模板与环境 Values 渲染成 Kubernetes Manifest
+→ Manifest 提交给 AKS
+→ Deployment 创建并管理 Pod
+→ Service 把在线请求转发到可用的 POS Service Pod
+```
+
+My Outlook 使用一套 Helm Chart 描述这些 Deployment、Service 和运行配置，再为测试 Ring 与生产环境提供不同 Values。发布新版本时更新镜像 Tag，Helm 生成新的 Manifest，Deployment 通过滚动发布逐步替换旧 Pod。Worker 启动后主动连接 Service Bus 消费任务，因此不需要对外暴露网络地址。
+
+Kubernetes 负责运行和管理进程。Task 状态、Lease、幂等、重试和 Agent 完成条件由应用 Runtime 实现。
 
 ## AKS 部署单元
 
@@ -37,95 +84,13 @@ Worker Pod 是无本地状态的。Task、Lease 和 Artifact 都保存在外部�
 
 ## Manifest、Helm Chart 和 Config 分别是什么
 
-这里可以把术语分清楚：
+My Outlook 使用 Helm 管理部署配置。Helm Chart 中的 Template 定义 Deployment、Service 和 ConfigMap 等 Kubernetes 资源结构，不同环境的 Values 提供镜像版本、副本数、资源和 Endpoint 等参数。Helm 将 Template 与 Values 渲染成最终 Kubernetes Manifest，再提交给 AKS。
 
-- **Kubernetes Manifest**：最终提交给 AKS API Server 的 YAML 资源定义，例如 `Deployment`、`Service`、`ConfigMap`、`HorizontalPodAutoscaler` 和 KEDA `ScaledObject`；
-- **Helm Chart**：参数化生成这些 Manifest 的模板包，包含 `Chart.yaml`、`values.yaml` 和 `templates/`；
-- **Config**：泛指运行参数。非敏感配置放 `values.yaml` 或 `ConfigMap`，敏感信息通过 Managed Identity 和 Key Vault 等外部 Secret Store 提供。
+**Helm Template + 环境 Values → Kubernetes Manifest → AKS。**
 
-**My Outlook 使用一套 Helm Chart，为不同环境提供独立 Values，再生成最终 Manifest。**它不手工维护每个环境的一整套重复 YAML：
+非敏感运行参数进入 Values 或 ConfigMap，敏感信息通过 Managed Identity 和外部 Secret Store 提供。
 
-```text
-charts/my-outlook/
-├─ Chart.yaml
-├─ values.yaml
-├─ values-ring0.yaml
-├─ values-prod.yaml
-└─ templates/
-   ├─ pos-service-deployment.yaml
-   ├─ pos-service-service.yaml
-   ├─ deep-scan-worker-deployment.yaml
-   ├─ synthesis-worker-deployment.yaml
-   ├─ service-account.yaml
-   ├─ config-map.yaml
-   ├─ hpa.yaml
-   ├─ keda-scaled-object.yaml
-   └─ pod-disruption-budget.yaml
-```
-
-下面是简化后的 `values-prod.yaml`。它保存环境差异，不保存访问令牌：
-
-```yaml
-global:
-  environment: prod
-  region: westus2
-  imageRegistry: outlookprod.azurecr.io
-  serviceAccountName: my-outlook-workload
-
-posService:
-  image:
-    repository: my-outlook-pos
-    tag: "2026.02.18.3"
-  replicas: 6
-  resources:
-    requests: { cpu: "1", memory: 2Gi }
-    limits: { cpu: "2", memory: 4Gi }
-  autoscaling:
-    minReplicas: 6
-    maxReplicas: 30
-    targetCPUUtilization: 60
-  runtime:
-    requestTimeoutSeconds: 30
-    maxActiveAgentLoops: 80
-    reservedOutputTokens: 3000
-    terminationGracePeriodSeconds: 60
-
-workers:
-  deepScan:
-    imageTag: "2026.02.18.3"
-    queueName: deep-scan-prod
-    minReplicas: 2
-    maxReplicas: 40
-    targetQueueLength: 20
-    maxConcurrentStepsPerPod: 4
-    leaseSeconds: 120
-    maxAttempts: 4
-    resources:
-      requests: { cpu: "2", memory: 6Gi }
-      limits: { cpu: "4", memory: 10Gi }
-  synthesis:
-    queueName: synthesis-prod
-    minReplicas: 2
-    maxReplicas: 20
-    targetQueueLength: 10
-    maxConcurrentStepsPerPod: 2
-
-agent:
-  taskStoreEndpoint: https://taskstore.prod.internal
-  artifactStoreEndpoint: https://sds.prod.internal
-  modelGatewayEndpoint: https://modelgateway.prod.internal
-  graphConcurrencyPerPod: 8
-  modelConcurrencyPerPod: 2
-  taskDeadlineMinutes: 30
-  retry:
-    baseDelaySeconds: 2
-    maxDelaySeconds: 60
-    jitterPercent: 25
-```
-
-生产中的实际数字需要通过容量测试和下游配额确定。**副本和资源属于部署配置，队列、Lease、并发和重试属于 Worker Runtime 配置，Endpoint 与版本属于环境配置。**
-
-## POS Service Deployment 大致长什么样
+## POS Service Deployment
 
 用于 Workload Identity 的 Service Account 先绑定托管身份 Client ID：
 
@@ -135,29 +100,26 @@ kind: ServiceAccount
 metadata:
   name: my-outlook-workload
   annotations:
-    azure.workload.identity/client-id: 11111111-2222-3333-4444-555555555555
+    azure.workload.identity/client-id: <managed-identity-client-id>
 ```
 
-Helm Template 渲染后的 POS Service `Deployment` 可以简化为：
+Helm Template 渲染后的 POS Service `Deployment` 结构如下，配置值仍使用匿名化示例：
 
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-outlook-pos
-  labels:
-    app: my-outlook-pos
-    ring: ring0
+  # 省略：通用 labels
 spec:
-  replicas: 6
+  replicas: <online-replicas>
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
   selector:
-    matchLabels:
-      app: my-outlook-pos
+    # 省略：与 Pod labels 对应的 selector
   template:
     metadata:
       labels:
@@ -166,42 +128,24 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       serviceAccountName: my-outlook-workload
-      terminationGracePeriodSeconds: 60
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              app: my-outlook-pos
+      terminationGracePeriodSeconds: <grace-period>
+      # 省略：可用区分布等通用 Pod 配置
       containers:
         - name: pos-service
-          image: outlookprod.azurecr.io/my-outlook-pos:2026.02.18.3
+          image: <registry>/my-outlook-pos:<version>
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - configMapRef:
                 name: my-outlook-runtime
-          resources:
-            requests:
-              cpu: "1"
-              memory: 2Gi
-            limits:
-              cpu: "2"
-              memory: 4Gi
+          # 省略：所有服务都有的 resources、日志和遥测配置
           startupProbe:
             httpGet: { path: /health/startup, port: http }
-            periodSeconds: 5
-            failureThreshold: 30
           readinessProbe:
             httpGet: { path: /health/ready, port: http }
-            periodSeconds: 5
-            failureThreshold: 3
           livenessProbe:
             httpGet: { path: /health/live, port: http }
-            periodSeconds: 10
-            failureThreshold: 3
           lifecycle:
             preStop:
               httpGet: { path: /admin/drain, port: http }
@@ -209,15 +153,11 @@ spec:
 
 关键参数的作用是：
 
-- `maxUnavailable: 0`：滚动发布期间不主动减少可用 POS Pod；
-- `maxSurge: 1`：每次最多额外创建一个新 Pod，控制发布资源峰值；
-- `topologySpreadConstraints`：把在线实例分散到可用区；
-- `requests`：调度和 HPA 计算的资源基线，`limits` 防止单 Pod 无界占用节点；
-- `startupProbe`：允许应用完成较慢初始化，避免启动阶段被 Liveness 反复重启；
-- `readinessProbe`：决定是否接收新请求，不检查 Graph 或模型是否短暂可用；
-- `preStop + terminationGracePeriodSeconds`：先 Drain 新请求，再让当前 Agent Loop 保存状态。
+- `maxUnavailable` 和 `maxSurge`：控制滚动发布期间的可用实例数；
+- Startup、Readiness 和 Liveness Probe：分别判断启动完成、能否接收流量和进程是否需要重启；
+- `preStop + terminationGracePeriodSeconds`：先停止接收新请求，再让当前 Agent Loop 保存状态。
 
-POS Service 还需要一个 `Service` 暴露稳定集群地址，并由内部 Ingress 或服务网格接入：
+POS Service 使用 Kubernetes `Service` 暴露稳定的集群内地址：
 
 ```yaml
 apiVersion: v1
@@ -231,9 +171,10 @@ spec:
     - name: http
       port: 80
       targetPort: http
+  # 省略：内部 Service 的通用网络配置
 ```
 
-## Worker Deployment 大致长什么样
+## Worker Deployment
 
 Worker 不暴露 HTTP Service。它启动后从 Service Bus 拉取 Step，Deployment 重点配置并发、资源、优雅退出和身份：
 
@@ -242,11 +183,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-outlook-deep-scan-worker
+  # 省略：通用 labels
 spec:
-  replicas: 2
+  replicas: <worker-replicas>
   selector:
-    matchLabels:
-      app: my-outlook-deep-scan-worker
+    # 省略：与 Pod labels 对应的 selector
   template:
     metadata:
       labels:
@@ -254,31 +195,24 @@ spec:
         workload: background
     spec:
       serviceAccountName: my-outlook-workload
-      terminationGracePeriodSeconds: 150
+      terminationGracePeriodSeconds: <worker-grace-period>
       containers:
         - name: worker
-          image: outlookprod.azurecr.io/my-outlook-worker:2026.02.18.3
+          image: <registry>/my-outlook-worker:<version>
           args: ["--worker-type=deep-scan"]
           env:
             - name: QUEUE_NAME
-              value: deep-scan-prod
+              value: <deep-scan-queue>
             - name: MAX_CONCURRENT_STEPS
-              value: "4"
+              value: <worker-concurrency>
             - name: LEASE_SECONDS
-              value: "120"
+              value: <lease-seconds>
             - name: MAX_ATTEMPTS
-              value: "4"
-          resources:
-            requests:
-              cpu: "2"
-              memory: 6Gi
-            limits:
-              cpu: "4"
-              memory: 10Gi
+              value: <max-attempts>
+          # 省略：所有 Worker 都有的 resources、日志和遥测配置
           readinessProbe:
             exec:
               command: ["/app/worker-health", "--ready"]
-            periodSeconds: 10
           lifecycle:
             preStop:
               exec:
@@ -289,7 +223,9 @@ spec:
 
 ## HPA 与 KEDA 配置
 
-POS Service 可使用 HPA。最基本的 CPU 配置如下，生产中也可以接入请求并发或延迟等自定义 Metric：
+**HPA 根据 CPU、请求并发和延迟等在线负载调整 POS Service Pod 数量；KEDA 根据 Service Bus 队列积压调整 Worker Pod 数量。**
+
+POS Service 使用 HPA，扩缩容信号包括 CPU、请求并发和延迟。下面的配置展示其中的 CPU Metric：
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -301,28 +237,12 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: my-outlook-pos
-  minReplicas: 6
-  maxReplicas: 30
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 60
-      policies:
-        - type: Percent
-          value: 50
-          periodSeconds: 60
-    scaleDown:
-      stabilizationWindowSeconds: 600
-      policies:
-        - type: Percent
-          value: 20
-          periodSeconds: 120
+  minReplicas: <min-online-replicas>
+  maxReplicas: <max-online-replicas>
   metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 60
+    # 关键区别：POS 按 CPU、请求并发和延迟等在线负载扩缩容
+    - <online-load-metrics>
+  # 省略：通用 scale-up / scale-down 稳定策略
 ```
 
 Worker 使用 KEDA `ScaledObject` 根据 Service Bus Queue 扩缩容：
@@ -335,23 +255,17 @@ metadata:
 spec:
   scaleTargetRef:
     name: my-outlook-deep-scan-worker
-  minReplicaCount: 2
-  maxReplicaCount: 40
-  pollingInterval: 15
-  cooldownPeriod: 300
-  advanced:
-    horizontalPodAutoscalerConfig:
-      behavior:
-        scaleDown:
-          stabilizationWindowSeconds: 600
+  minReplicaCount: <min-worker-replicas>
+  maxReplicaCount: <max-worker-replicas>
   triggers:
     - type: azure-servicebus
       metadata:
-        queueName: deep-scan-prod
-        messageCount: "20"
-        namespace: my-outlook-prod
+        queueName: <deep-scan-queue>
+        messageCount: <target-messages-per-pod>
+        namespace: <service-bus-namespace>
       authenticationRef:
         name: service-bus-workload-identity
+  # 省略：轮询、冷却和缩容稳定窗口
 ---
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
@@ -374,12 +288,10 @@ kind: ConfigMap
 metadata:
   name: my-outlook-runtime
 data:
-  TASK_STORE_ENDPOINT: https://taskstore.prod.internal
-  ARTIFACT_STORE_ENDPOINT: https://sds.prod.internal
-  MODEL_GATEWAY_ENDPOINT: https://modelgateway.prod.internal
-  TASK_DEADLINE_MINUTES: "30"
-  GRAPH_CONCURRENCY_PER_POD: "8"
-  MODEL_CONCURRENCY_PER_POD: "2"
+  TASK_STORE_ENDPOINT: <task-store-endpoint>
+  ARTIFACT_STORE_ENDPOINT: <sds-endpoint>
+  MODEL_GATEWAY_ENDPOINT: <model-gateway-endpoint>
+  # 省略：其他非敏感 Runtime 参数
 ```
 
 Service Bus、Graph 和存储凭据不直接写进 Manifest。Pod 使用 AKS Workload Identity，以 Service Account 绑定的托管身份换取短期 Token；如果必须读取 Secret，则通过 Key Vault CSI Driver 挂载，并限制 Namespace、Service Account 和访问 Scope。
@@ -392,7 +304,7 @@ kind: PodDisruptionBudget
 metadata:
   name: my-outlook-pos
 spec:
-  minAvailable: 5
+  minAvailable: <minimum-available-pos-pods>
   selector:
     matchLabels:
       app: my-outlook-pos
@@ -402,7 +314,7 @@ spec:
 
 ## 扩缩容与背压
 
-POS Service 使用 HPA 按 CPU、请求并发和延迟扩容。Worker 使用 KEDA 类的事件驱动扩缩容，主要看：
+POS Service 使用 HPA 按 CPU、请求并发和延迟扩容。Worker 使用 KEDA 进行事件驱动扩缩容，主要看：
 
 ```text
 queue_depth
@@ -449,34 +361,6 @@ Metrics 分为四层：
 4. **AKS 资源**：副本数、Pod 重启、CPU、内存、OOM、节点压力和 Probe 失败。
 
 Log 和 Trace 记录状态、版本、资源 ID、耗时和错误码，不保存完整邮件、附件、Prompt 或用户 Token。需要定位内容质量时，通过受控权限读取 Artifact 与源数据，不能把敏感内容默认复制进普通生产日志。
-
-## 一次 Worker 扩容事故
-
-一次 Deep Scan 范围调整后，待扫描 Task 增加，Queue Depth 与 Oldest Message Age 快速上升。值班最初提高 Deep Scan Worker 最大副本数，队列短暂下降，但 Graph `429` 很快升高，Step 重试使队列再次增长，同时用户主动发起的 Catch-up 请求也开始变慢。
-
-```text
-扫描范围扩大
-→ Queue Depth 上升
-→ Worker 快速扩容
-→ Graph 并发超过区域配额
-→ 429 与重试增加
-→ 有效吞吐下降
-→ Queue Age 继续上升
-```
-
-**根因不是 AKS 计算不足，而是扩缩容没有受 Graph 配额约束，独立重试又放大了流量。**
-
-应急处理分三步：先把 Deep Scan 最大并发降到 Graph 安全配额以内；暂停低优先级后台刷新，优先处理用户主动任务；将 429 Step 转成 `waiting_dependency`，按 `Retry-After` 加随机抖动重新调度，不占住 Worker。队列稳定后再逐步恢复后台扫描。
-
-后续修复包括：
-
-- Worker 扩容公式加入 Graph 全局并发令牌，而不是只看 Queue Depth；
-- 将用户主动任务和后台刷新拆成不同优先级队列；
-- 增加 Oldest Message Age、每个成功 Step 的 Attempt 数和重试率告警；
-- 由 Step Owner 统一执行重试，取消各调用层独立重试；
-- 容量测试同时模拟 Worker 总并发和真实 Graph 限流，而不是只压单 Pod。
-
-**Worker 数量不等于系统吞吐。Agent 部署的容量上限通常取决于最慢且有配额的依赖，扩缩容、背压和重试必须一起设计。**
 
 ## 这部分能够回答的面试题
 

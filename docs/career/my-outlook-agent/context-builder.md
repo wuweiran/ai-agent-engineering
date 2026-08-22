@@ -13,7 +13,7 @@ permalink: /docs/career/my-outlook-agent/context-builder/
 
 ## Context Builder 在 Agent Loop 中的位置
 
-My Outlook 自己运行 Agent Loop。每次需要调用模型时，POS Service 不会把 Conversation、Deep Scan Finding、Synthesis Artifact 和全部 Worker Result直接拼接，而是先根据当前 Step 生成 `ContextBuildRequest`，再由 Context Builder 构造这一次 Model Input。
+My Outlook 自己运行 Agent Loop。每次需要调用模型时，POS Service 不会把 Conversation、Deep Scan Finding、Synthesis Artifact 和全部 Worker Result直接拼接，而是先根据当前 Step 生成 `ContextBuildRequest`，再由 Context Builder 构造这一次 Model Input。POS 随后把 Model Input Reference 作为参数写入 Model Step，由 Worker 调用模型。
 
 ```text
 Agent Loop
@@ -44,7 +44,7 @@ ContextBuildResult
 └─ diagnostics
 ```
 
-**Context Builder 只生成本轮模型工作集，不修改或删除外部持久状态。**Conversation、Task 和 Artifact 分别保存在外部系统中，所以某条内容本轮没有进入 Context，不代表被永久删除。
+**Context Builder 只生成本轮模型工作集，不修改或删除持久状态。**Conversation Store、Task Store 和 Artifact Store 维护各自的数据，所以某条内容本轮没有进入 Context，不代表被永久删除。
 
 ## 为什么需要分层存储
 
@@ -52,12 +52,12 @@ ContextBuildResult
 
 | 信息 | 保存位置 | 进入 Context 的方式 |
 | --- | --- | --- |
-| 完整用户和 Agent 消息 | Conversation Store | 最近几轮原文，较早部分使用摘要 |
+| 用户和 Agent 消息 | Conversation Store | 最近几轮原文，较早部分使用摘要 |
 | 目标、确认事实、当前 Step、待办 | Task Store | 固定保留的结构化 Task State |
 | Deep Scan 候选发现 | Annotation Store | 按当前目标、时间和置信信息筛选 |
 | Briefing、Recommendation、Draft | SDS Artifact Store | 按 Artifact 类型、版本和引用选择 |
 | 邮件、日历和联系人原文 | Microsoft 365 权威系统 | 需要核实时由 Graph/API Worker 按 ID 读取 |
-| Worker 执行结果 | Step / Result Store | 只保留仍影响后续判断的最新结果 |
+| Worker 执行结果 | Task Store 中的 Step Result | 只保留仍影响后续判断的最新结果 |
 
 **结构化 Task State 不能依赖摘要，完整邮件也不复制进 Conversation。**摘要有损，邮件可能变化、体积大且受权限控制；Artifact 保存生成结果和 Citation，使模型不必每轮重新处理全部原始材料。
 

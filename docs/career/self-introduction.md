@@ -49,10 +49,9 @@ permalink: /docs/career/self-introduction/
 ### My Outlook Agent 部署
 
 - 参与 My Outlook 自托管 Agent 的 Service + Worker 部署链路；
-- 在 AKS 上拆分在线 Agent Loop 与 Deep Scan、Synthesis、LLM 和 Graph/API Worker；
-- 在 Agent Loop 调用模型前按任务阶段和 Token Budget 动态组装 Context，裁剪旧对话和已消费的 Worker Result；
-- 通过持久 Task、队列、幂等和 Lease 支持长任务恢复，避免 Worker 重启导致重复执行；
-- 按在线请求和后台队列分别扩缩容，并用端到端 Trace、灰度和回滚保障生产运行。
+- 维护部署后的 Agent Runtime，通过端到端 Trace 排查任务卡住、重复执行和 Context 异常；
+- 修复 Worker 重启场景中的持久化顺序、Lease、幂等和任务恢复问题；
+- 了解 POS Service、队列、Task Store 与 AKS Worker 组成的生产运行链路。
 
 ### Agent 评测与竞品对比
 

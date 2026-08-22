@@ -11,19 +11,75 @@ permalink: /docs/career/my-outlook-agent/runtime-task/
 
 这部分展开 [My Outlook 项目概览]({{ site.baseurl }}/docs/career/my-outlook-agent/)中的 Service—Queue—Worker 链路，重点说明任务为什么能够跨请求、Pod 重启和版本发布继续执行。
 
-## 为什么不能把整个 Agent Loop 都放在 HTTP 请求中
+## 一次请求怎样进入 Agent Loop
 
-My Outlook 同时处理两类工作：用户对话中的短决策，以及 Deep Scan、Synthesis、模型调用和 Graph 查询等可能持续较久的后台任务。二者如果都绑在一个 HTTP 请求和 Service Pod 上，会出现三个问题：客户端断线导致任务生命周期不明确；Pod 发布或重启后执行上下文丢失；Worker 等待模型限流或 Graph `Retry-After` 时持续占用计算资源。
+Outlook Client 把用户输入和 `conversation_id` 发送给 POS Service。POS Service 创建或读取 Task 与 Run，保存用户消息，创建第一个待执行 Step，然后统一返回 `202 + task_id`。后续 Agent Loop 由持久状态和 Step Result 驱动，不占用原始 HTTP 请求。
 
-因此，**短决策留在 POS Service，长任务持久化后交给 Worker**。若下一步能够在短时间内完成，Service 可以同步执行并返回；需要等待、重试或跨实例继续的步骤则持久化为 Task，返回 `202 + task_id`，由调度器投递给 Worker。客户端通过状态接口或事件流观察进度，**断线不等于取消**。
+POS Service 是唯一的业务编排者。它根据当前 Task State 决定创建 Model、Deep Scan、Synthesis 或 Graph/API Step，并把 Step 类型、工具名称、版本、完整参数和输入 Reference 保存下来。Worker 不判断业务路径，只按 Step 参数调用内置 Handler 并写回 Result。Task Scheduler 在 Result 持久化后恢复 POS Service 中的 Agent Loop，由 POS 决定下一步。
 
 ```text
-POST /agent/tasks
-→ 创建 Task 与初始 Run
-→ POS Service 执行一次 Agent Decision
-   ├─ Final / Clarify：保存结果并返回
-   └─ Async Step：持久化 Step → 发布 task_id → Worker 执行
+Outlook Client
+→ POST /agent/tasks 或 POST /agent/tasks/{task_id}/messages
+→ POS Service 保存消息并创建或读取 Task / Run
+→ POS Service 创建 Step 并提供 Type + Tool + Version + Arguments
+→ 返回 202 + task_id
+→ 对应 Worker 执行 Step → Result 写回 Task Store
+→ Task Scheduler 恢复 POS Service 中的 Agent Loop
+   ├─ Final：保存最终回答并完成 Run
+   ├─ Clarify：保存问题并等待用户输入
+   └─ Continue：创建下一个 Model / Deep Scan / Synthesis / Graph/API Step
+→ 客户端通过 Task API 查询进度与结果
 ```
+
+伪代码如下：
+
+```text
+handleRequest(request):
+   task = taskStore.loadOrCreate(request.taskId, request.conversationId)
+   conversationStore.append(request.message)
+   run = taskStore.startOrResumeRun(task.id)
+   resumeAgentLoop(task, run)
+   return accepted(task.id)
+
+resumeAgentLoop(task, run):
+   lastResult = taskStore.readCurrentStepResult(run.id)
+
+   if lastResult is ModelResult:
+      if lastResult.isFinal() or lastResult.needsClarification():
+         conversationStore.append(lastResult.message)
+         taskStore.finishOrWait(task, run, lastResult)
+         return
+
+      toolStep = taskStore.createStep(
+         run.id,
+         stepType = "tool",
+         toolName = lastResult.toolCall.name,
+         toolVersion = toolCatalog.version(lastResult.toolCall.name),
+         arguments = validate(lastResult.toolCall.arguments)
+      )
+      queue(toolStep)
+      return
+
+   context = contextBuilder.build(task, lastResult)
+   modelStep = taskStore.createStep(
+      run.id,
+      stepType = "model",
+      arguments = { contextRef: context.reference }
+   )
+   queue(modelStep)
+
+queue(step):
+   taskStore.markQueued(step)
+   serviceBus.publish(step.id, step.version)
+
+onWorkerCompleted(step, result):
+   taskStore.saveStepResult(step, result)
+   taskScheduler.resume(step.taskId)
+```
+
+Worker 只执行 Step 和保存 Result，不负责决定 Agent 的下一步。下一步始终由 POS Service 中恢复后的 Agent Loop 根据最新持久状态决定。客户端断线不会取消已经持久化的 Task。
+
+保存 Synthesis Artifact 等固定流程不需要模型产生 Tool Call：POS 直接创建确定性的 Step，或者 Worker 在完成当前 Step 时写入 SDS。只有执行与否需要模型判断的能力，才作为工具提供给模型。
 
 ## Task、Run、Step 和 Attempt
 
@@ -53,7 +109,33 @@ Step
 - **Step** 是能够独立持久化和恢复的模型、Deep Scan、Synthesis 或 Graph/API 步骤；
 - **Attempt** 记录某个 Worker 对 Step 的一次实际处理，不等于新的业务动作。
 
-Task 状态使用受控转换，例如：
+## 一个 Agent Run 的数据保存在哪里
+
+一次 Run 不会把全部 Context 保存成一个大字段。交互、执行状态、候选发现、生成产物和业务原文按照各自的生命周期分开持久化：
+
+| 数据 | 保存位置 | 保存内容 |
+| --- | --- | --- |
+| 用户与 Agent 消息 | **Conversation Store** | 完整消息、顺序、角色和消息版本 |
+| Task、Run、Step、Attempt | **Task Store** | 目标、状态、当前步骤、版本、Lease、重试信息和 Step Result |
+| Deep Scan Finding | **Annotation Store** | 从邮件、日历和组织信号中提取的重点、承诺、待办和标注 |
+| Briefing、Catch-up、Draft、Recommendation | **SDS Artifact Store** | Synthesis 生成的产物、版本、Citation 和 Artifact Reference |
+| 邮件、日历、联系人原文 | **Microsoft 365 权威系统** | 原始业务对象；系统保存 Reference，需要时由 Graph/API Worker 读取 |
+| Worker 调度消息 | **Azure Service Bus** | 携带 `task_id`、`step_id` 和 `step_version`，通知对应 Worker 有 Step 已就绪；不保存权威任务状态 |
+
+它们通过稳定 ID 关联：
+
+```text
+conversation_id
+→ task_id
+→ run_id
+→ step_id
+→ attempt_id
+→ artifact_ref / evidence_ref
+```
+
+每次调用模型前，Context Builder 根据当前 `task_id`、`run_id` 和 `step_id`，从这些持久化来源读取必要内容，选择、替换和压缩后生成本轮 Model Input。**Model Input 是临时工作集；能够恢复 Run 的依据是上述持久状态和 Reference。**
+
+Task 状态使用以下受控转换：
 
 ```text
 created → running → waiting_dependency → queued → running
@@ -67,7 +149,7 @@ Worker 不能只根据队列消息决定执行。消息只携带 `task_id` 和 `
 
 ## 状态与消息怎样保持一致
 
-POS Service 或 Worker 需要先把下一步写入 Task Store，再向 Service Bus 发布一条只携带 `task_id`、`step_id` 和 `step_version` 的唤醒消息。数据库与 Service Bus 不是一个事务，因此后台 Dispatcher 会周期性扫描已经进入 `queued`、但尚未记录成功投递的 Step 并补发；消费者始终重新读取 Task Store，并根据 Step Version 判断消息是否仍然有效。
+POS Service 或 Worker 需要先把下一步写入 Task Store，再向 Service Bus 发布一条只携带 `task_id`、`step_id` 和 `step_version` 的 Step 就绪消息。对应 Worker 收到消息后重新读取 Task Store，确认 Step 仍然可以执行。数据库与 Service Bus 不是一个事务，因此后台 Dispatcher 会周期性扫描已经进入 `queued`、但尚未记录成功投递的 Step 并补发；Worker 根据 Step Version 判断消息是否仍然有效。
 
 ```text
 Task Store：Step waiting → queued
@@ -75,7 +157,7 @@ Task Store：Step waiting → queued
 → Worker 重新读取并校验 Step
 ```
 
-如果数据库已经提交但进程在发送前崩溃，Dispatcher 会补发；如果消息已经发出但投递标记尚未更新，消息可能重复，因此**整个链路按 At Least Once 设计，Task Store 才是权威状态**。这个实现也可以替换为本地消息表，关键是不假设数据库更新与消息发送天然原子。
+如果数据库已经提交但进程在发送前崩溃，Dispatcher 会补发；如果消息已经发出但投递标记尚未更新，消息可能重复，因此**整个链路按 At Least Once 设计，Task Store 才是权威状态**。消费者依靠 Step Version 和持久状态处理重复消息，不假设数据库更新与消息发送天然原子。
 
 ## Worker 怎样领取任务
 
@@ -107,13 +189,40 @@ queued
 
 模型或 Graph 返回 `429 + Retry-After` 时，Step 转成 `waiting_dependency` 并保存 `not_before`。调度器到期后重新发布 Step，**Worker 不在进程内 `sleep`**。等待用户输入也采用相同原则：Task 进入 `waiting_user`，释放 Worker；新消息到达后创建下一 Step 并重新调度。
 
-重试受四个预算约束：单 Step 最大 Attempt、整个 Task Deadline、模型或 Graph 的全局重试预算，以及当前租户的并发配额。每一层都自行重试会造成放大，因此只有负责该 Step 的 Worker 决定是否重试，上层 Agent Loop只接收结构化的最终失败语义。
+重试受四个预算约束：单 Step 最大 Attempt、整个 Task Deadline、模型或 Graph 的全局重试预算，以及当前租户的并发配额。POS Service 在 Step 中写入重试策略和预算，Worker 按该策略处理暂时失败并返回结构化结果，不自行改变业务路径。
 
 ## 任务取消与版本发布
 
 取消只阻止未开始的 Step，并向正在运行的可取消调用发送信号；已经完成的外部动作不会因为 Task 标记为 `cancelled` 自动撤销。需要撤销时必须由业务 API 提供合法补偿。
 
 Run 固定 `agent_version`、`model_config` 和 `context_policy_version`。发布新版本后，**新 Task 使用新版本，存量 Task 继续使用创建时的兼容版本**，避免执行中途改变 Prompt、工具契约或 Context 规则。若旧 Worker 已经回收，则必须运行显式 State Migration，而不是让任务静默漂移到新版本。
+
+## 运行问题与修复
+{: #runtime-bug-fixes }
+
+### Worker 重启后重复生成 Artifact
+
+**问题。**Synthesis Worker 已经把 Artifact 写入 SDS，但在 Step Result 写回 Task Store 前发生 Pod 重启。Lease 到期后，新 Worker 看到 Step 仍为 `running`，重新执行同一个 Step，产生重复 Artifact 和额外模型调用。
+
+**发现。**Trace 中同一个 `step_id` 出现两个 `attempt_id`。第一次 Attempt 有 SDS 写入记录却没有 Step Result，第二次 Attempt 在 Lease 到期后重新开始。由此确认副作用已经发生，Task Store 却没有记录完成。
+
+**修复。**执行前生成稳定的 `artifact_id` 和幂等键，Synthesis Worker 按该 ID 写入或更新 Artifact。恢复时先查询 SDS，找到已完成产物后补写 Step Result；Task Store 同时校验 Lease Version，拒绝旧 Worker 的迟到结果。修复后，Worker 重启会复用已有 Artifact并从持久状态继续。
+
+### 迟到 Attempt 覆盖当前结果
+
+**问题。**第一次 Attempt 调用超时后触发重试，第二次 Attempt 已经成功；第一次调用随后返回，并把旧结果覆盖到同一个 Step，Agent 因此根据过期结果继续决策。
+
+**发现。**Trace 显示 Step Result 的更新时间晚于成功 Attempt，但写入记录来自更早的 `attempt_id`。同一 Step 的状态出现 `succeeded → running` 或成功结果被超时结果替换，说明结果写入没有校验当前执行权。
+
+**修复。**Worker 提交结果时同时携带 `attempt_id` 和 Lease Version，Task Store 通过条件更新只接受当前 Attempt。Context Builder 只读取已经提交的当前 Step Result，迟到结果保留在 Attempt 记录中用于诊断，但不能推进任务状态。
+
+### 滚动发布后旧 Task 无法继续
+
+**问题。**Task 使用旧版 Tool Schema 和 Context Policy 创建，滚动发布后被新版 Worker 领取。新版 Worker 无法解析旧 Step，或者使用新契约继续执行，导致 Task 失败或长期停在队列中。
+
+**发现。**失败集中出现在发布窗口，且具有相同的 `created_version`。Trace 显示消息投递和 Lease 都正常，错误发生在 Worker 读取旧 Step 后的反序列化或能力检查阶段，因此问题来自版本不兼容。
+
+**修复。**Task 和 Run 固定 Agent、Context Policy 与 Worker Capability Version；调度器只把 Step 交给兼容 Worker。新增字段保持向后兼容，破坏性变化使用新版本并执行显式 State Migration。回滚时停止创建问题版本的新 Task，存量 Task 继续由兼容 Worker 完成。
 
 ## 这部分能够回答的面试题
 

@@ -62,13 +62,13 @@ My Outlook is a personal Agent that uses signals from email, calendars, and orga
 
 My Outlook has a self-hosted Agent backend. The online Agent service hosts the Agent loop and task orchestration, while separate AKS Workers handle Deep Scan, Synthesis, LLM calls, and Graph or API operations.
 
-I participated in the deployment and runtime engineering of this system. My work focused on the Service-to-Worker task contract, queue-based scheduling, Context assembly and trimming, task recovery, AKS scaling, and production monitoring. The architecture separates low-latency Agent decisions from long-running or resource-intensive work so that each part can scale and recover independently.
+I helped deploy and maintain this runtime. My work focused on using end-to-end traces to diagnose stuck tasks, duplicate execution, Context issues, and recovery failures after Worker restarts. I fixed bugs in persistence ordering, leases, idempotency, and task recovery. The architecture separates low-latency Agent decisions from long-running or resource-intensive work so that each part can scale and recover independently.
 
 Long-running work is persisted as tasks and dispatched to Workers through queues. A Task, Run, Step, and Attempt represent different levels of execution state. Leases control which Worker can advance a task, while stable business identities and idempotency keys prevent repeated delivery from creating duplicate side effects. After a Worker restart, execution resumes from the persisted task state.
 
 Before each model call, the Context Builder reconstructs the model input from conversation history, task state, findings, artifacts, and Worker results. It always preserves the current goal and confirmed state, selects other information according to the current task stage, removes results that have already been consumed, and compresses older history when the input exceeds the Token budget.
 
-My responsibility focused on the deployment and execution path. The Deep Scan and Synthesis business algorithms were owned by other teams.
+My responsibility focused on maintaining the deployment and execution path. The Deep Scan and Synthesis business algorithms were owned by other teams.
 
 ## Copilot Evaluation and Golden Set
 
