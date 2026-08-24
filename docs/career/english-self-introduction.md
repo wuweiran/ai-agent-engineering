@@ -38,11 +38,11 @@ Later, I also participated in adding LLM capabilities for workflow summarization
 
 ## Outlook Copilot Insight Service
 
-The Outlook Copilot Insight Service sits between Outlook business data and Copilot. It retrieves the email, conversation, calendar, and people evidence needed for the current request. Its search-based RAG architecture uses Outlook Search for retrieval.
+Copilot needs real-time Outlook evidence to answer email questions, but raw Outlook Search results cannot be placed directly into the model Context. The Insight Service therefore acts as a search-based RAG layer between Outlook Search and Copilot.
 
-My main responsibility was the email query pipeline. I implemented paginated retrieval, object-level permission filtering, message and conversation deduplication, multi-signal ranking, and Top-K Context selection. The pipeline also preserves citations so that Copilot can ground its answer in the source emails.
+My main responsibility was the email query pipeline. A continuously changing mailbox creates several challenges: results may be duplicated across messages and conversations, every candidate must remain within the user's permission boundary, and retrieval must stay within strict latency, memory, and Token budgets.
 
-The main challenge was to retrieve enough relevant and authorized evidence from a continuously changing mailbox while keeping latency, memory usage, downstream calls, and Token consumption within strict limits. I used a bounded candidate pool, early stopping during pagination, timeout-based degradation, and overload protection to keep the request cost predictable.
+I used Outlook Search for paginated retrieval, then applied object-level permission filtering, message and conversation deduplication, and deterministic multi-signal ranking. A bounded Top-12 candidate pool, early stopping, and timeout-based degradation kept downstream calls and resource usage predictable. The final results included lightweight snippets and citations for Copilot. The pipeline achieved 93.2% Recall@12, zero permission leaks, 100% Citation Validity, and 1.1-second P95 latency.
 
 ## Outlook Copilot Agent Capabilities
 
@@ -58,34 +58,32 @@ These changes increased the online task completion rate from 62% to 78% and the 
 
 ## My Outlook Self-hosted Agent Deployment
 
-My Outlook is a personal Agent that uses signals from email, calendars, and organizational data to generate briefings, catch-up items, drafts, and recommendations.
+My Outlook is a self-hosted personal Agent that uses email, calendar, and organizational signals to generate briefings, catch-up items, drafts, and recommendations. The POS Service owns the Agent loop and task orchestration, while separate AKS Workers execute Deep Scan, Synthesis, LLM, and Graph or API steps.
 
-My Outlook has a self-hosted Agent backend. The online Agent service hosts the Agent loop and task orchestration, while separate AKS Workers handle Deep Scan, Synthesis, LLM calls, and Graph or API operations.
+Because these tasks can run across multiple services and outlive the original HTTP request, each action is persisted as a Task, Run, Step, and Attempt before being dispatched through a queue. The Task Store is the source of truth; leases control which Worker can advance a Step, and idempotency keys protect external side effects.
 
-I helped deploy and maintain this runtime. My work focused on using end-to-end traces to diagnose stuck tasks, duplicate execution, Context issues, and recovery failures after Worker restarts. I fixed bugs in persistence ordering, leases, idempotency, and task recovery. The architecture separates low-latency Agent decisions from long-running or resource-intensive work so that each part can scale and recover independently.
+I helped deploy and maintain this runtime and used end-to-end traces to diagnose real recovery failures. In one case, a Synthesis Worker wrote an Artifact to SDS but restarted before saving the Step Result, so recovery generated the Artifact again. We introduced a stable Artifact ID and idempotency key, checked SDS before retrying, and then repaired the missing Step Result. I also fixed stale Attempts overwriting newer results by validating both the Attempt ID and Lease Version, and kept old Tasks running across rolling releases by pinning their Agent, Context, and Worker capability versions.
 
-Long-running work is persisted as tasks and dispatched to Workers through queues. A Task, Run, Step, and Attempt represent different levels of execution state. Leases control which Worker can advance a task, while stable business identities and idempotency keys prevent repeated delivery from creating duplicate side effects. After a Worker restart, execution resumes from the persisted task state.
-
-Before each model call, the Context Builder reconstructs the model input from conversation history, task state, findings, artifacts, and Worker results. It always preserves the current goal and confirmed state, selects other information according to the current task stage, removes results that have already been consumed, and compresses older history when the input exceeds the Token budget.
+Before each model call, the Context Builder reconstructs the Model Input from conversation history, task state, findings, artifacts, and Worker results. It preserves the current goal and confirmed state, selects evidence for the current Step, replaces stale versions, and compresses older history when the Token budget is exceeded. This keeps Context management separate from durable task recovery.
 
 My responsibility focused on maintaining the deployment and execution path. The Deep Scan and Synthesis business algorithms were owned by other teams.
 
 ## Copilot Evaluation and Golden Set
 
-I am responsible for the overall evaluation of Outlook Copilot. The internal SEVAL platform provides job execution and result management, while the Outlook team owns the email-specific evaluation data, success criteria, regression analysis, and release decisions.
+I am responsible for the overall evaluation of Outlook Copilot. Evaluation is used throughout Feature development, not only as a release gate. The internal SEVAL platform provides job execution and result management, while the Outlook team owns the email-specific evaluation data, success criteria, and regression analysis.
 
-I maintain the Golden Set Queries, Grounding Data, and Assertions. Each Query combines the current email context with a user utterance. Grounding Data contains the controlled emails and attachments used as evidence, while Assertions define the facts that a response must cover and the content or behavior that is not allowed.
+Initially, each Feature maintained its own Queries and test emails. As coverage grew, the data became duplicated and fragmented, and an email change could break tests without a clear impact scope. We separated and centralized Queries, Grounding Data, and Assertions into a shared Golden Set. Reusable high-value emails support multiple Queries, while stable mappings make affected tests traceable.
 
-I also incorporate privacy-protected, eyes-off user utterances to represent real user behavior in the evaluation set. I prioritize reusable emails that can support multiple Queries and retain low-frequency, high-risk cases. This improves both the representativeness and maintainability of the evaluation assets.
+Developer-written Utterances also tended to be cleaner and more explicit than real user input. I therefore incorporated privacy-protected, eyes-off user Utterances to represent the real distribution, while retaining low-frequency, high-risk boundary cases.
 
-For each Agent, model, Prompt, Context, or tool change, I compare the Baseline and Candidate on the same evaluation assets. We evaluate the final result, Tool Calls, citations, safety, latency, and cost, and use both absolute thresholds and relative regression gates to prevent quality loss. Severe safety or incorrect-action failures can block a release even when the average score improves.
+For each Agent, model, Prompt, Context, or tool change, I run a Baseline and compare the Candidate on the same assets. We evaluate the final result, Tool Calls, citations, safety, and latency. During development, Feature-level slices show whether the change works; after that, the full Golden Set checks cross-feature regressions and supports the release decision.
 
-When a case fails, I follow its Trace to identify the first point where execution diverges from the expected path. The root cause may be the Context, model decision, Tool Call, Tool Result, or evaluator itself. After the owning layer is fixed, I rerun the failed cases, related scenarios, and the full regression set. Production failures are also converted into reusable evaluation cases, forming a continuous quality improvement loop.
+When a case fails, I follow its Trace to find the first divergence in the Context, model decision, Tool Call, Tool Result, or evaluator. After the owning layer is fixed, I rerun the failed cases, related scenarios, and the full regression set. Production failures are also converted into reusable evaluation cases.
 
 ## Copilot Bake-off
 
-Copilot Bake-off is a competitive evaluation system within the Outlook Copilot evaluation work. It compares the end-to-end product behavior of Outlook Copilot and Gmail Gemini using the same supported email tasks, Grounding Data, and Assertions.
+Copilot Bake-off compares the end-to-end product behavior of Outlook Copilot and Gmail Gemini rather than comparing their underlying models. The main challenge was fairness: the two products have different capability ranges, user systems, mail stores, and execution interfaces.
 
-I built this system from scratch. To compare the two products end to end, the system uses Playwright to operate the Gmail Gemini interface and collect its responses. It selects tasks supported by both products, imports the corresponding Outlook test data into Google Workspace, maintains cross-system mappings, runs both products, pairs valid responses, and submits them for the same checklist-based scoring.
+I built the system from scratch. It first selects Queries supported by both products, imports the corresponding Outlook test emails into Google Workspace, and maintains User, Email, and Golden Set mappings so that both sides receive equivalent tasks and data. Outlook responses are collected through SEVAL scraping. Gmail has no equivalent evaluation API, so Playwright operates the real Gemini interface and waits for the streamed response to complete.
 
-The comparison identified cases where Outlook failed while Gemini passed. High-value gaps were added to the regular Outlook evaluation set, assigned to the relevant owner, fixed, and verified through regression. A later Bake-off run then confirmed whether the product gap had actually been closed.
+Only Queries with valid responses from both products are paired and scored against the same Assertions; ingestion, mapping, and scraping failures are reported separately from product failures. The comparison produces Query-level outcomes such as `Outlook fail / Gemini pass`. High-value gaps are added to the regular Outlook Golden Set, fixed through the normal regression process, and checked again in a later Bake-off run.
