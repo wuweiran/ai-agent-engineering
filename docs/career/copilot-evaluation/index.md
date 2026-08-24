@@ -9,11 +9,25 @@ permalink: /docs/career/copilot-evaluation/
 
 # Copilot Evaluation 与 Golden Set
 
+## 核心思路
+
+```text
+Feature 开发需要持续判断改动是否有效、是否引入回归
+→ 痛点一：各 Feature 自建 Query 和测试邮件，数据重复分散，邮件变化后无法判断影响范围
+→ 将 Query、Grounding Data 和 Assertion 分开并集中维护；用热点 Email 承载多条 Query，形成可复用的 Golden Set
+→ 痛点二：开发者编写的理想 Utterance 不能代表真实用户输入
+→ 通过 eyes-off 脱敏引入真实 Utterance，同时保留低频高风险边界样例
+→ 开发前运行 Baseline，开发中按功能切片配对 Candidate，并沿 Trace 定位第一次偏离
+→ 形成支持 Feature 迭代、全量回归和发布门禁的共享评测资产
+```
+
+**同类项目通常关注：** 任务质量（LM Checklist 任务通过率）、证据引用（Citation 正确率）、工具调用（Tool Call 正确率）、安全（严重安全违规率）、性能（端到端延迟 P95）、评测成本。
+
 ## 项目介绍
 
-这个项目为 Outlook Copilot 建立可重复的 Agent 评测和发布判断。微软内部 SEVAL 负责 Evaluation Job 的创建、调度和结果管理；Outlook 团队定义邮件业务的评测数据、成功标准和上线门禁。我负责持续维护 [Golden Set Query、Grounding Data 和 Assertion]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#evaluation-data-definition)，并将 eyes-off 脱敏后的[真实用户 Utterance]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#real-user-utterance)纳入回归，使评测既覆盖真实邮件 Context，也能长期复用邮件证据。
+这个项目为 Outlook Copilot 建立可重复的 Agent 评测，支持 Feature 效果验证、回归定位和发布判断。微软内部 SEVAL 负责 Evaluation Job 的创建、调度和结果管理；Outlook 团队定义邮件业务的评测数据、成功标准和上线门禁。我负责持续维护 [Golden Set Query、Grounding Data 和 Assertion]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#evaluation-data-definition)，并将 eyes-off 脱敏后的[真实用户 Utterance]({{ site.baseurl }}/docs/career/copilot-evaluation/golden-set/#real-user-utterance)纳入回归，使评测既覆盖真实邮件 Context，也能长期复用邮件证据。
 
-版本发布时，我使用同一套资产配对比较 Baseline 和 Candidate，按功能汇总 [LM Checklist、Citation、Tool Call 和 Safety]({{ site.baseurl }}/docs/career/copilot-evaluation/metrics/#evaluation-metrics)，并通过[绝对与相对质量门禁]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#quality-gates)阻止新增回归。多轮任务使用固定脚本或 [User Simulator]({{ site.baseurl }}/docs/career/copilot-evaluation/multi-turn/#user-simulator)补充后续输入；出现失败时，从 Query 级结果进入 [Trace 定位]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#trace-diagnosis)，找到 Context、模型、Tool Call、Tool Result 或评分中的第一次偏离。
+Feature 开发时，我先运行 Baseline，再用同一套资产评估 Candidate，按功能汇总 [LM Checklist、Citation、Tool Call 和 Safety]({{ site.baseurl }}/docs/career/copilot-evaluation/metrics/#evaluation-metrics)，判断改动是否有效。多轮任务使用固定脚本或 [User Simulator]({{ site.baseurl }}/docs/career/copilot-evaluation/multi-turn/#user-simulator)补充后续输入；出现失败时，从 Query 级结果进入 [Trace 定位]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#trace-diagnosis)，找到 Context、模型、Tool Call、Tool Result 或评分中的第一次偏离。Feature 达标后再运行全量 Golden Set，并通过[绝对与相对质量门禁]({{ site.baseurl }}/docs/career/copilot-evaluation/regression/#quality-gates)判断是否可以发布。
 
 ## Outlook 评测有什么不同
 

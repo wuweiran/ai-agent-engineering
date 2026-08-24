@@ -9,6 +9,19 @@ permalink: /docs/career/copilot-capabilities/
 
 # Outlook Copilot Agent 能力开发
 
+## 核心思路
+
+```text
+让 Agent 根据用户目标搜索并整理邮件
+→ 建立 Clarify → Search → Read → Plan → Confirm → Write 主链路
+→ 上线后发现两类损失：目标模糊导致计划无法确认；确认后因邮件状态变化、部分成功或结果未知而无法完成
+→ 将流程拆成“收敛范围”和“确认执行”：只澄清影响结果的条件，基于候选邮件生成可确认的 Plan
+→ 执行时按版本冲突、部分成功和结果未知分别恢复，避免过期 Plan、重复操作和错误报成功
+→ 有效 Plan 确认率 69.3% → 81.5%，确认后操作完成率 90.0% → 96.4%，线上任务完成率 62.4% → 78.6%
+```
+
+**同类项目通常关注：** 任务完成（线上任务完成率）、关键漏斗转化（有效 Plan 确认率、确认后操作完成率）、离线质量（Scenario 通过率）、执行正确性、安全（严重安全违规率）、用户体验、成本。
+
 ## 项目介绍
 
 Outlook 用户阅读邮件时，经常需要解释局部内容、总结附件，或者继续搜索和整理相关邮件。这个项目的目标不是再做一个通用聊天入口，而是让用户留在当前邮件场景中完成“理解内容—取得证据—执行动作”的任务。我基于 Microsoft 365 Copilot 的 [Declarative Agent 框架]({{ site.baseurl }}/docs/career/copilot-capabilities/runtime/#declarative-agent-configuration)，从零开发了划词解释、附件总结和邮箱整理三个场景。

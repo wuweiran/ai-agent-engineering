@@ -9,11 +9,25 @@ permalink: /docs/career/copilot-bakeoff/
 
 # Copilot Bake-off
 
+## 核心思路
+
+```text
+从产品维度对比 Outlook Copilot 与 Gmail Gemini
+→ 难点一：两边能力范围、用户体系和邮件存储不同，直接比较不公平
+→ 筛选双方都支持的 Query，将邮件导入 Google Workspace，并建立 User / Email / Golden Set Mapping
+→ 难点二：Gmail 没有对等评测接口，且 UI 与流式 Response 会变化
+→ Outlook 通过 SEVAL scraping；Gmail 用 Playwright 状态机操作真实页面并判断生成完成
+→ 只配对两侧有效 Response，使用同一 Assertion 评分，避免把 Mapping 或 scraping 失败算成产品失败
+→ 产出四类 Query 级对比，定位 Outlook 相对短板，并将高价值问题纳入常规 Golden Set 回归
+```
+
+**同类项目通常关注：** 产品质量差异（四类配对结果分布）、分场景差异（各功能的 `Outlook fail / Gemini pass`）、有效样本覆盖、数据等价性、执行稳定性（scraping / ingestion / Mapping 失败率）、评测成本。
+
 ## 项目介绍
 
 Copilot Bake-off 是 Outlook Copilot Evaluation 下的竞品对比系统，用同一组邮件、用户任务和 Assertion 比较 Outlook Copilot 与 Gmail Gemini 的完整产品结果，而不是比较裸模型。项目只选择双方都支持的功能；由于 Gmail Gemini 没有对等评测接口，核心方案是通过 [Playwright scraping]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#playwright-scraping)操作 Gmail 页面并采集 Response，再与 Outlook 结果做配对评分。
 
-我从零搭建了这套 Bake-off 系统。系统完成共同能力 Query 筛选、Google Workspace 数据导入、[跨系统 Mapping]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#cross-system-mapping)、Playwright 执行和两侧 Response 配对，最后再把评分输入提交到 SEVAL。Playwright 执行器按页面状态推进，并[判断流式生成是否真正结束]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-completion-detection)；scraping、数据映射和产品失败分别统计，只有两侧都得到有效 Response 的 Query 才进入[配对与 LM Checklist 评分]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-pairing-evaluation)。最终结果用于定位 `Outlook fail / Gemini pass` 的具体产品差距。高价值问题会进入[长期回归闭环]({{ site.baseurl }}/docs/career/copilot-bakeoff/business-loop/#product-improvement-loop)：加入常规 Outlook Golden Set，完成修复、功能切片和全量回归，通过质量门禁后发布，再由下一次 Bake-off 验证差距是否收敛。
+我从零搭建了这套 Bake-off 系统。系统完成共同能力 Query 筛选、Google Workspace 数据导入、[跨系统 Mapping]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#cross-system-mapping)和两侧 Response 配对；Outlook 侧使用 SEVAL scraping，Gmail 侧使用 Playwright scraping。Playwright 执行器按页面状态推进，并[判断流式生成是否真正结束]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-completion-detection)；scraping、数据映射和产品失败分别统计，只有两侧都得到有效 Response 的 Query 才进入[配对与 LM Checklist 评分]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/#response-pairing-evaluation)。最终结果用于定位 `Outlook fail / Gemini pass` 的具体产品差距。高价值问题会进入[长期回归闭环]({{ site.baseurl }}/docs/career/copilot-bakeoff/business-loop/#product-improvement-loop)：加入常规 Outlook Golden Set，完成修复、功能切片和全量回归，通过质量门禁后发布，再由下一次 Bake-off 验证差距是否收敛。
 
 ## 系统怎样工作
 
@@ -32,12 +46,12 @@ Outlook Golden Set
         ↓
 Google Workspace Ingestion
         ↓
-Outlook Team Bake-off Runner
-├─ Outlook Copilot → Response
+Outlook Team Bake-off System
+├─ SEVAL Scraping → Outlook Copilot → Response
 ├─ Playwright Scraping → Gmail Gemini → Response
 └─ 有效 Response 配对与导出
         ↓
-SEVAL Job：仅运行 LM Checklist
+SEVAL Job：运行 LM Checklist
         ↓
 Outlook Team 生成对比结果
 ```
@@ -46,13 +60,13 @@ Bake-off 不使用完整 Outlook Golden Set。Query 在进入数据同步和执�
 
 ## 运行方式
 
-Bake-off 不是 SEVAL 提供或编排的能力。Outlook Team 自己搭建批处理系统，负责 Golden Set 裁剪、数据导入、两侧 Runner、Playwright Worker、Query 调度、重试、状态和 Response 配对；两侧结果准备完成后，才创建 SEVAL Job 运行 LM Checklist。
+Bake-off 的整体编排由 Outlook Team 搭建的系统负责，包括 Golden Set 裁剪、数据导入、跨系统 Mapping、Query 状态和 Response 配对。Outlook 侧调用 SEVAL scraping，Gmail 侧调度 Playwright Worker；两侧结果准备完成后，再创建 SEVAL Job 运行 LM Checklist。
 
 正式 full run 由项目成员在 Bake-off 系统中手动创建，选择 Golden Set、两侧版本、Mapping 和 scraping 配置；启动后执行过程自动完成。另有少量固定 Query 定时运行 scraping smoke，提前发现 Gmail 页面或登录状态变化，但不生成正式产品结论。Outlook Copilot 自身的发布门禁仍由 Copilot Evaluation 回归负责，不依赖 Bake-off。
 
 ## 核心实现
 
-Gmail 一侧通过 Playwright scraping 模拟测试用户打开映射后的邮件、调用 Gemini 并提取 Response。Outlook Grounding Data 导入 Google Workspace 后，辅助系统维护 User、Email 和 Golden Set Mapping，保证同一 Query 在两边使用语义对应的用户、邮件和 Utterance。
+Outlook 一侧通过 SEVAL scraping 运行 Golden Set Query 并取得 Response；Gmail 一侧通过 Playwright scraping 模拟测试用户打开映射后的邮件、调用 Gemini 并提取 Response。Outlook Grounding Data 导入 Google Workspace 后，辅助系统维护 User、Email 和 Golden Set Mapping，保证同一 Query 在两边使用语义对应的用户、邮件和 Utterance。
 
 Outlook Team 的 Bake-off 系统先过滤执行失败并配对两侧有效 Response，再把 Response、Grounding Data 和同一组 Assertion 提交到 SEVAL 运行 `lm_checklist`。SEVAL 返回评分结果后，由 Bake-off 系统生成 Query 级产品对比；数据导入、映射或 scraping 失败单独统计。具体执行和失败分类见[Scraping 与跨系统执行]({{ site.baseurl }}/docs/career/copilot-bakeoff/execution/)。
 
@@ -71,7 +85,7 @@ Bake-off 不给两个产品做笼统总排名，而是按共同能力 Query 识�
 - 裁剪后的 Outlook Grounding Data 怎样导入 Google Workspace；
 - User、Email 和 Golden Set 怎样跨系统映射；
 - 怎样保证同一 Query 在两侧使用语义等价的邮件和用户关系；
-- Outlook Team 系统怎样准备两侧评分输入，以及 SEVAL 为什么只负责最后的 LM Checklist；
+- Outlook 侧怎样通过 SEVAL scraping 取得 Response，Gmail 侧怎样通过 Playwright scraping 取得 Response；
 - 如何区分产品质量差异、数据映射问题和 scraping 基础设施问题；
 - 怎样把 Outlook 相对短板转成有 Owner 的产品问题，并进入常规 Golden Set、修复和发布闭环。
 

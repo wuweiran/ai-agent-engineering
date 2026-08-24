@@ -11,24 +11,24 @@ permalink: /docs/career/copilot-bakeoff/execution/
 
 ## 执行边界
 
-Outlook Copilot 已经接入内部 Evaluation 链路，可以直接从 Golden Set 运行 Query。Gmail Gemini 没有供项目调用的对等评测接口，所以 Bake-off 的核心是使用 Playwright 操作真实 Gmail Gemini 页面，取得最终 Response。这个过程内部称为 scraping。
+两侧都通过 scraping 取得真实产品 Response。Outlook Copilot 已接入内部 Evaluation 链路，通过 SEVAL scraping 运行 Golden Set Query；Gmail Gemini 没有对等评测接口，因此使用 Playwright 操作真实 Gmail Gemini 页面并取得 Response。
 
 Scraping 不是爬取公开网页，也不是绕过用户权限。它使用隔离的 Google Workspace 测试账号和已导入的测试邮件，模拟测试用户在产品页面中的正常操作。
 
 ## 运行方式与系统形态
 
-Bake-off 不是 SEVAL 提供的能力。Golden Set 裁剪、Grounding Data ingestion、跨系统 Mapping、Outlook 执行、Playwright scraping、批量调度、失败重试和两侧 Response 汇总，全部由 Outlook Team 搭建和维护。只有在两侧 Response 已经准备完成后，才把评分输入提交到 SEVAL 运行 `lm_checklist`。
+Bake-off 的整体编排由 Outlook Team 搭建和维护，包括 Golden Set 裁剪、Grounding Data ingestion、跨系统 Mapping、Gmail Playwright scraping、状态管理和两侧 Response 汇总。Outlook Response 通过 SEVAL scraping 取得；两侧 Response 准备完成后，再提交到 SEVAL 运行 `lm_checklist`。
 
 ```text
 Outlook Team Bake-off System
 ├─ 选择 Golden Set Version 与 Bake-off 标签
 ├─ Grounding Data ingestion / Mapping
-├─ Outlook Evaluation Runner
-├─ Playwright Scraping Workers
+├─ SEVAL Scraping → Outlook Response
+├─ Playwright Scraping Workers → Gmail Response
 ├─ Query 调度、重试与状态管理
 └─ 两侧 Response 配对与导出
                 ↓
-SEVAL Job
+SEVAL LM Checklist Job
 └─ 使用同一 Assertion 运行 lm_checklist
                 ↓
 Outlook Team 汇总并分析比较结果
@@ -48,9 +48,9 @@ Outlook Team 的 scraping 基础设施另有一组定时运行的小型 smoke su
 因此自动化分成两类：
 
 - **自动 smoke**：由 Outlook Team 系统验证 scraping 链路是否还能工作；
-- **手动 full run**：在 Outlook Team 系统中固定本次对比范围和版本，自动执行完整 Bake-off，最后调用 SEVAL 评分。
+- **手动 full run**：在 Outlook Team 系统中固定本次对比范围和版本，调用 SEVAL scraping 和 Playwright scraping 取得两侧 Response，最后调用 SEVAL 评分。
 
-手动的是“何时用哪一组版本启动一次对比”，不是手动逐条操作浏览器。Run 启动后，Query 调度、浏览器执行、重试、状态收集和 Response 配对由 Outlook Team 系统自动完成；SEVAL 只负责最后的 LM Checklist Job。
+手动的是“何时用哪一组版本启动一次对比”，不是手动逐条操作产品。Run 启动后，Outlook 侧由 SEVAL scraping，Gmail 侧由 Playwright scraping；Outlook Team 系统负责状态收集和 Response 配对，SEVAL 再运行 LM Checklist Job。
 
 ## Golden Set 裁剪
 
@@ -316,7 +316,7 @@ Scraping 失败时保存失败阶段、错误码、UI Variant、Scraping Version
 ## Response 配对与 SEVAL 评分
 {: #response-pairing-evaluation }
 
-Outlook Team 的 Bake-off 系统先完成两侧执行、过滤无效 Run，并生成统一的 Response 记录：
+Outlook Team 的 Bake-off 系统收集 SEVAL scraping 的 Outlook Response 和 Playwright scraping 的 Gmail Response，过滤无效 Run，并生成统一的 Response 记录：
 
 ```json
 {
@@ -334,7 +334,7 @@ Outlook Team 的 Bake-off 系统先完成两侧执行、过滤无效 Run，并�
 }
 ```
 
-Bake-off 系统将两侧 Response、对应 Grounding Data 和同一组 Assertion 组装成 SEVAL 能接受的评分输入，创建最后一步的 SEVAL Job。SEVAL 只运行 `lm_checklist` 并返回每条 Response 的 Assertion 结果，不参与 scraping、两侧执行或产品比较逻辑。
+Bake-off 系统将两侧 Response、对应 Grounding Data 和同一组 Assertion 组装成评分输入，再创建 SEVAL LM Checklist Job。SEVAL 在前一阶段负责 Outlook scraping，在这一阶段运行 `lm_checklist` 并返回每条 Response 的 Assertion 结果；产品比较逻辑仍由 Bake-off 系统完成。
 
 Outlook Team 取得评分结果后，再按 Query 生成配对结果：
 
@@ -356,8 +356,9 @@ Both fail
 - Google Workspace ingestion Version；
 - User、Email 和 Golden Set Mapping Version；
 - Playwright scraping Version；
+- Outlook SEVAL scraping Job 与 Version；
 - 两侧产品和模型版本；
-- Outlook Team Bake-off Runner Version；
+- Outlook Team Bake-off System Version；
 - 最终评分使用的 SEVAL Job 与 `lm_checklist` Version。
 
 如果 Gmail 页面结构变化导致 scraping Version 更新，先用固定冒烟 Query 验证采集结果，再重新运行对比。不能把自动化脚本变化和产品版本变化放在同一次实验中解释。

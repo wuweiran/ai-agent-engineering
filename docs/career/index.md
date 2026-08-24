@@ -46,7 +46,7 @@ permalink: /docs/career/
 
 2026 年 3 月开始参与 Copilot Bake-off，作为 Copilot Evaluation 主线下的专项对比工作。核心实现是使用 Playwright 操作 Gmail Gemini 页面并采集 Response，内部称为 scraping；同时把 Outlook Grounding Data 导入 Google Workspace，维护 User、Email 和 Golden Set Mapping。
 
-Bake-off 先按标签从 Outlook Golden Set 中裁剪出双方都有对应功能的 Query；Gmail Gemini 不支持的功能不执行，也不记为失败。Golden Set 裁剪、数据 ingestion、mapping、两侧执行、scraping 和 Response 配对全部由 Outlook Team 搭建的系统完成。两侧有效 Response 准备好后才提交到 SEVAL 运行 LM Checklist，评分返回后再由 Bake-off 系统生成 Query 级对比。
+Bake-off 先按标签从 Outlook Golden Set 中裁剪出双方都有对应功能的 Query；Gmail Gemini 不支持的功能不执行，也不记为失败。Outlook 侧通过 SEVAL scraping 取得 Response，Gmail 侧通过 Playwright scraping 取得 Response；Outlook Team 搭建的系统负责 Golden Set 裁剪、数据 ingestion、mapping 和 Response 配对。两侧有效 Response 准备好后再由 SEVAL 运行 LM Checklist，评分返回后由 Bake-off 系统生成 Query 级对比。
 
 ## 时间线中的工作变化
 

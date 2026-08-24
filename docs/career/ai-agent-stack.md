@@ -117,6 +117,6 @@ permalink: /docs/career/ai-agent-stack/
 - 没有在项目中使用 LangChain、LangGraph、Dify、MCP、vLLM、Ollama 或 Multi-Agent；
 - Insight Service 是搜索型 RAG，不是向量 RAG；
 - Copilot Evaluation 的 SEVAL Job 平台由统一中台提供，我负责 Outlook 业务评测资产、回归和失败分析；
-- Bake-off 的执行与映射系统由 Outlook Team 建设，SEVAL 只负责最后运行 LM Checklist。
+- Bake-off 的数据、映射、Gmail Playwright scraping 和结果配对系统由 Outlook Team 建设；SEVAL 负责 Outlook scraping，并在配对后运行 LM Checklist。
 
 面试时可以使用通用技术解释架构选择，但应明确区分“理解过”“可类比”和“项目实际使用过”。

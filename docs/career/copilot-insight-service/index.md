@@ -9,6 +9,19 @@ permalink: /docs/career/copilot-insight-service/
 
 # Outlook Copilot Insight Service
 
+## 核心思路
+
+```text
+Copilot 回答邮件问题需要 Outlook 中的实时证据
+→ 在 Outlook Search 与 Copilot 之间建设搜索型 RAG 服务
+→ 难点：邮箱持续变化，Search 候选存在重复和权限边界，同时请求受延迟、内存与 Token 预算约束
+→ 从 Outlook Search 分页召回，经对象级权限过滤、Message / Conversation 去重和多特征排序得到 Top 12
+→ 用有界候选池、提前停止和超时降级限制资源，再将 Snippet 与 Citation 返回 Copilot
+→ Recall@12 93.2%，权限泄露 0，Citation Validity 100%，P95 1.1 秒
+```
+
+**同类项目通常关注：** 召回质量（Recall@12）、排序质量（Top 3 Hit Rate / MRR / NDCG@12）、权限安全（权限泄露）、证据可用性（Citation Validity）、性能（P95 / P99）、成本（平均下游请求数）。
+
 ## 项目介绍
 
 Outlook Copilot Insight Service 位于 Outlook 业务数据和 Copilot 之间，负责为模型取得当前请求需要的邮件、会话和日历证据。它是一套基于 Outlook 原生搜索的**搜索型 RAG**：服务负责 Retrieval 和 Context Augmentation，Copilot 模型负责最终 Generation，不使用文档 Chunk、Embedding 或向量数据库。
