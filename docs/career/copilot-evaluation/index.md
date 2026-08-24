@@ -11,15 +11,19 @@ permalink: /docs/career/copilot-evaluation/
 
 ## 核心思路
 
-```text
 Feature 开发需要持续判断改动是否有效、是否引入回归
-→ 痛点一：各 Feature 自建 Query 和测试邮件，数据重复分散，邮件变化后无法判断影响范围
-→ 将 Query、Grounding Data 和 Assertion 分开并集中维护；用热点 Email 承载多条 Query，形成可复用的 Golden Set
-→ 痛点二：开发者编写的理想 Utterance 不能代表真实用户输入
-→ 通过 eyes-off 脱敏引入真实 Utterance，同时保留低频高风险边界样例
-→ 开发前运行 Baseline，开发中按功能切片配对 Candidate，并沿 Trace 定位第一次偏离
-→ 形成支持 Feature 迭代、全量回归和发布门禁的共享评测资产
-```
+
+→ 各 Feature 自建 Query 和测试邮件，数据重复分散，邮件变化后无法判断影响范围
+
+→ 通过**共享 Golden Set**分开并集中维护 Query、Grounding Data 和 Assertion，用热点 Email 承载多条 Query
+
+→ 开发者编写的理想 Utterance 不能代表真实用户输入
+
+→ 通过**真实分布与边界覆盖**引入 eyes-off 脱敏 Utterance，同时保留低频高风险样例
+
+→ 通过**Baseline / Candidate 配对与 Trace 归因**验证 Feature 效果并定位第一次偏离
+
+→ 同一套评测资产支持 Feature 迭代、全量回归和发布门禁
 
 **同类项目通常关注：** 任务质量（LM Checklist 任务通过率）、证据引用（Citation 正确率）、工具调用（Tool Call 正确率）、安全（严重安全违规率）、性能（端到端延迟 P95）、评测成本。
 

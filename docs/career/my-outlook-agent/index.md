@@ -11,16 +11,13 @@ permalink: /docs/career/my-outlook-agent/
 
 ## 核心思路
 
-```text
-运行原理：POS Service 将 Agent 长任务持久化为 Task / Run / Step，再通过 Queue 交给 Worker；Task Store 是权威状态
-├─ Bug 1：Artifact 已写入 SDS，但 Pod 在 Step Result 落库前重启，导致恢复后重复生成
-│  └─ 使用稳定 artifact_id 和幂等键；恢复时先查 SDS，复用产物并补写 Step Result
-├─ Bug 2：重试 Attempt 已成功，先前超时的 Attempt 迟到返回并覆盖新结果
-│  └─ 提交结果时校验 attempt_id 和 Lease Version，只允许当前执行者推进 Step
-└─ Bug 3：滚动发布后，新 Worker 无法继续执行旧契约创建的 Task
-      └─ Task 固定 Agent / Context / Worker Capability Version，只调度到兼容 Worker，破坏性变更显式迁移
-结果：重启后不再重复生成 Artifact，迟到结果不能覆盖当前状态，存量 Task 可跨滚动发布继续执行
-```
+**架构总思路：** POS Service 维护 Agent Loop，将 Model、Deep Scan、Synthesis 和 Graph/API 动作持久化为 Task / Run / Step，再通过 Queue 交给 Worker；Task Store 保存权威状态，Worker Result 落库后由 POS 继续下一轮。
+
+**Worker 重启后重复生成 Artifact：** Artifact 已写入 SDS，但 Step Result 尚未落库，恢复逻辑误以为任务未完成；使用稳定 `artifact_id` 和幂等键，恢复时先查 SDS，复用产物并补写 Step Result。
+
+**迟到 Attempt 覆盖当前结果：** 重试 Attempt 已成功，先前超时的 Attempt 随后返回；提交结果时同时校验 `attempt_id` 和 Lease Version，只允许当前执行者推进 Step。
+
+**滚动发布后旧 Task 无法继续：** 新 Worker 无法解析旧契约创建的 Step；Task 固定 Agent / Context / Worker Capability Version，只调度到兼容 Worker，破坏性变更显式迁移。
 
 **同类项目通常关注：** 任务结果（Task 完成率）、执行可靠性（各 Step 失败率、重复副作用）、时效（任务等待时间）、队列健康（Queue Age）、依赖容量（模型与 Graph 429）、成本（每个成功任务的 Token）、安全。
 

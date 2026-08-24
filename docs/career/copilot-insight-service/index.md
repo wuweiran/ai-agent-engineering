@@ -11,14 +11,17 @@ permalink: /docs/career/copilot-insight-service/
 
 ## 核心思路
 
-```text
 Copilot 回答邮件问题需要 Outlook 中的实时证据
-→ 在 Outlook Search 与 Copilot 之间建设搜索型 RAG 服务
-→ 难点：邮箱持续变化，Search 候选存在重复和权限边界，同时请求受延迟、内存与 Token 预算约束
-→ 从 Outlook Search 分页召回，经对象级权限过滤、Message / Conversation 去重和多特征排序得到 Top 12
-→ 用有界候选池、提前停止和超时降级限制资源，再将 Snippet 与 Citation 返回 Copilot
+
+→ 在 Outlook Search 与 Copilot 之间建设**搜索型 RAG 服务**
+
+→ 邮箱持续变化，Search 候选存在重复和权限边界，同时请求受延迟、内存与 Token 预算约束
+
+→ 通过**权限过滤、去重与业务重排**从分页候选中选出 Top 12
+
+→ 使用**有界检索与降级**控制分页、内存和延迟，再将 Snippet 与 Citation 返回 Copilot
+
 → Recall@12 93.2%，权限泄露 0，Citation Validity 100%，P95 1.1 秒
-```
 
 **同类项目通常关注：** 召回质量（Recall@12）、排序质量（Top 3 Hit Rate / MRR / NDCG@12）、权限安全（权限泄露）、证据可用性（Citation Validity）、性能（P95 / P99）、成本（平均下游请求数）。
 

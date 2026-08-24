@@ -11,15 +11,19 @@ permalink: /docs/career/copilot-bakeoff/
 
 ## 核心思路
 
-```text
 从产品维度对比 Outlook Copilot 与 Gmail Gemini
-→ 难点一：两边能力范围、用户体系和邮件存储不同，直接比较不公平
-→ 筛选双方都支持的 Query，将邮件导入 Google Workspace，并建立 User / Email / Golden Set Mapping
-→ 难点二：Gmail 没有对等评测接口，且 UI 与流式 Response 会变化
-→ Outlook 通过 SEVAL scraping；Gmail 用 Playwright 状态机操作真实页面并判断生成完成
-→ 只配对两侧有效 Response，使用同一 Assertion 评分，避免把 Mapping 或 scraping 失败算成产品失败
+
+→ 两边能力范围、用户体系和邮件存储不同，直接比较不公平
+
+→ 通过**共同能力筛选与跨系统映射**准备等价的 Query、用户和邮件
+
+→ Gmail 没有对等评测接口，且 UI 与流式 Response 会变化
+
+→ 通过**双侧真实产品 Scraping**取得 Outlook 与 Gmail Response
+
+→ 通过**有效结果配对与同标准评分**避免把 Mapping 或 scraping 失败算成产品失败
+
 → 产出四类 Query 级对比，定位 Outlook 相对短板，并将高价值问题纳入常规 Golden Set 回归
-```
 
 **同类项目通常关注：** 产品质量差异（四类配对结果分布）、分场景差异（各功能的 `Outlook fail / Gemini pass`）、有效样本覆盖、数据等价性、执行稳定性（scraping / ingestion / Mapping 失败率）、评测成本。
 
