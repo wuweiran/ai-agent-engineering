@@ -3,7 +3,7 @@ layout: default
 title: Agent Runtime 与任务恢复
 parent: My Outlook Agent 部署
 grand_parent: 工作经历
-nav_order: 1
+nav_order: 2
 permalink: /docs/career/my-outlook-agent/runtime-task/
 ---
 

@@ -52,7 +52,11 @@ AKS Worker Pools
 SDS / Annotation Store / Microsoft 365 APIs
 ```
 
-## 三条技术主线
+## 四条技术主线
+
+### Architecture Design
+
+面试先从 Agent 的基本结构讲起：POS Service 维护 Agent Loop，模型在本轮 Context 中决定 Final、Clarify 或 Tool Call，Runtime 将动作持久化为 Step 并交给 Worker，Result 再推动下一轮。消息历史、任务状态、Finding / Artifact 和本轮 Context 分层管理；现有材料没有独立通用长期记忆模块，不把所有持久数据都笼统称为 Memory。完整讲述见 [Architecture Design]({{ site.baseurl }}/docs/career/my-outlook-agent/architecture-design/)。
 
 ### Agent Runtime 与任务恢复
 

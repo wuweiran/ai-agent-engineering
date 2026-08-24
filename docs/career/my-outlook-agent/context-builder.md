@@ -3,13 +3,13 @@ layout: default
 title: Context Builder 与 Token Budget
 grand_parent: 工作经历
 parent: My Outlook Agent 部署
-nav_order: 2
+nav_order: 3
 permalink: /docs/career/my-outlook-agent/context-builder/
 ---
 
 # Context Builder 与 Token Budget
 
-这部分展开 [My Outlook 项目概览]({{ site.baseurl }}/docs/career/my-outlook-agent/#dynamic-context-assembly)中的动态 Context 设计，重点说明 Model Input 怎样从持久状态和外部 Artifact 重建，而不是依赖不断增长的聊天记录。
+这部分是 Context 专项深挖。第一次准备项目时先看 [Architecture Design]({{ site.baseurl }}/docs/career/my-outlook-agent/architecture-design/)，再用本文回答 Context 来源、Token Budget、选择、替换和压缩等追问。本文重点说明 Model Input 怎样从持久状态和外部 Artifact 重建，而不是依赖不断增长的聊天记录。
 
 ## Context Builder 在 Agent Loop 中的位置
 
