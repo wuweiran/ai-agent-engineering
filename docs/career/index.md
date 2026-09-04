@@ -40,7 +40,7 @@ permalink: /docs/career/
 
 在评测工作期间短期参与 My Outlook 开发。My Outlook 会扫描邮件、日历和组织信号，生成 Briefing、Catch-up 和工作建议；用户也可以继续与 Agent 对话，完成查询、生成和执行类任务。
 
-我参与 Agent 的部署和运行维护。MyOutlook（POS）Service 在 AKS 中承载在线 Agent Loop、动态 Context 组装和任务编排，Deep Scan、Synthesis、LLM 与 Graph/API Worker 负责异步执行。我的工作重点是通过端到端 Trace 排查任务卡住、重复执行和 Context 异常，并修复持久化顺序、Lease、幂等与 Worker 重启后的任务恢复问题。
+我参与 Agent 的部署和运行维护。MyOutlook（POS）Service 在 AKS 中承载在线 Agent Loop、动态 Context 组装和任务编排，Deep Scan、Synthesis、LLM 与 Graph/API Worker 负责异步执行。我的工作重点是通过端到端 Trace 排查任务卡住、重复执行和 Context 异常，并修复持久化顺序、Lease、幂等与 Worker 重启后的任务恢复问题。这类问题大多是分布式系统里难以稳定复现的时序和状态一致性 Bug，只能靠 Trace 倒推，不能靠本地复现；能在短时间内接手一套不是自己设计的 Runtime 定位到根因，一部分靠过去在工作流引擎和任务调度系统上的经验，另一部分是先小流量验证、确认无误再放量的习惯。
 
 ## 2026.03—至今　[Copilot Bake-off]({{ site.baseurl }}/docs/career/copilot-bakeoff/)
 

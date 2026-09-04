@@ -94,4 +94,6 @@ POS Service、Deep Scan、Synthesis、LLM 和 Graph/API Worker **作为独立 Wo
 
 这段经历最有价值的是**维护自托管 Agent 的部署与 Runtime，并修复真实运行问题**，不是声称拥有整个 My Outlook。可以深入讲怎样沿 Trace 定位 Service—Worker 链路中的状态与恢复 Bug，以及怎样通过持久化顺序、Lease、幂等和版本隔离完成修复；Deep Scan 与 Synthesis 的 Handler、Microsoft 365 数据平台和基础模型 Endpoint 由对应团队维护。
 
+这几个问题的共同点是：系统不是我设计的，故障很难在本地稳定复现，修复又必须在不打断在跑任务的生产环境里完成。能定位到根因，一部分靠过去在 Purview Workflow 引擎和早期任务调度系统上的经验——看到“结果被覆盖”“任务卡住不动”，会先怀疑是执行权或持久化顺序的问题，而不是从头假设；另一部分是刻意保持的工程习惯：定位问题靠 Trace 逐步收窄，而不是凭感觉猜；改动前想清楚有没有更简单的替代方案，再动手；上线前补回归测试、加监控指标，先灰度验证再放量；修完之后把判断标准写成文档，留给团队里其他人复用，而不是自己知道就结束。
+
 它补充了 Declarative Agent 项目主要使用平台 Runtime 的经验：前者说明怎样在托管框架上开发业务场景，My Outlook 则说明自己掌握 Agent Loop 时怎样部署、持久化、恢复和治理生产系统。

@@ -206,7 +206,11 @@ Run 固定 `agent_version`、`model_config` 和 `context_policy_version`。发�
 
 **发现。**Trace 中同一个 `step_id` 出现两个 `attempt_id`。第一次 Attempt 有 SDS 写入记录却没有 Step Result，第二次 Attempt 在 Lease 到期后重新开始。由此确认副作用已经发生，Task Store 却没有记录完成。
 
+**候选方案。**考虑过两种替代方案：一是缩短 Lease 时长、让新 Worker 更快接管，但只要“副作用已发生、结果未落库”这个窗口存在，重启就还会撞上它，缩短 Lease 只能降低概率，不能消除重复；二是把 SDS 写入和 Task Store 更新放进同一个分布式事务，但两者是完全独立的存储系统，没有现成的跨系统事务能力，为了这一类 Step 引入两阶段提交，对其余不需要外部产物的 Step 也是不必要的复杂度。最终选择用一次“先查是否已存在”的读操作替代事务，成本最低，也符合 Lease 管执行权、幂等管副作用这条原则。
+
 **修复。**执行前生成稳定的 `artifact_id` 和幂等键，Synthesis Worker 按该 ID 写入或更新 Artifact。恢复时先查询 SDS，找到已完成产物后补写 Step Result；Task Store 同时校验 Lease Version，拒绝旧 Worker 的迟到结果。修复后，Worker 重启会复用已有 Artifact并从持久状态继续。
+
+**怎么验证。**先补了一个回归测试，模拟“SDS 已写入、Step Result 未落库”时触发 Pod 重启，确认恢复逻辑会复用已有 Artifact 而不是重新生成；同时加了重复 `artifact_id` 的计数指标，用于上线后确认这个数字回落到 0。修复先在小流量灰度上观察了一段时间，中间也让 AI 辅助过一遍改动前后的 Trace 差异，检查是否有两次几乎同时发生的恢复请求这类边界场景没覆盖到，确认没问题后再全量。
 
 ### 迟到 Attempt 覆盖当前结果
 
@@ -214,7 +218,11 @@ Run 固定 `agent_version`、`model_config` 和 `context_policy_version`。发�
 
 **发现。**Trace 显示 Step Result 的更新时间晚于成功 Attempt，但写入记录来自更早的 `attempt_id`。同一 Step 的状态出现 `succeeded → running` 或成功结果被超时结果替换，说明结果写入没有校验当前执行权。
 
+**候选方案。**考虑过在触发重试时主动取消第一次调用，但请求一旦发出，模型或 Graph 服务端不保证能收到取消信号，无法保证第一次调用真的停止返回；也考虑过按“谁的完成时间晚就采纳谁”，但这其实就是当时线上的实际行为，完成时间只反映网络返回的先后，不反映哪次调用在业务上应该生效。最终选择让写入方携带 `attempt_id` 和 Lease Version，由 Task Store 做条件更新，只有当前仍持有执行权的 Attempt 才能生效，不依赖任何一侧调用是否真的停止。
+
 **修复。**Worker 提交结果时同时携带 `attempt_id` 和 Lease Version，Task Store 通过条件更新只接受当前 Attempt。Context Builder 只读取已经提交的当前 Step Result，迟到结果保留在 Attempt 记录中用于诊断，但不能推进任务状态。
+
+**怎么验证。**写了单元测试模拟“重试先成功、超时的第一次调用后到达”这种乱序时序，确认 Task Store 会拒绝旧 Attempt 的写入；同时加了 Stale Attempt 拒绝次数的指标，用来确认线上确实存在这种乱序，也用于后续长期观察。修复分批发布后观察了一段时间没有再出现结果被覆盖的情况，中间也用 AI 辅助复核了几条相关 Trace，确认没有遗漏其他乱序组合。
 
 ### 滚动发布后旧 Task 无法继续
 
@@ -222,7 +230,13 @@ Run 固定 `agent_version`、`model_config` 和 `context_policy_version`。发�
 
 **发现。**失败集中出现在发布窗口，且具有相同的 `created_version`。Trace 显示消息投递和 Lease 都正常，错误发生在 Worker 读取旧 Step 后的反序列化或能力检查阶段，因此问题来自版本不兼容。
 
+**候选方案。**考虑过发布时直接让存量 Task 失败、由用户重新发起，但长任务的已有进度会全部丢失，用户体验代价太大；也考虑过让新旧 Worker 长期并存、不主动下线旧版本，但这样每次发布都会新增一批要长期维护的“僵尸”版本，运维成本只会越积越多。最终选择让 Task/Run 在创建时就固定版本，调度器只把 Step 分配给兼容的 Worker，只有真正的 Breaking Change 才走一次性的显式 State Migration。
+
 **修复。**Task 和 Run 固定 Agent、Context Policy 与 Worker Capability Version；调度器只把 Step 交给兼容 Worker。新增字段保持向后兼容，破坏性变化使用新版本并执行显式 State Migration。回滚时停止创建问题版本的新 Task，存量 Task 继续由兼容 Worker 完成。
+
+**怎么验证。**在下一次发布前先补了回归用例，模拟“发布窗口内创建的存量 Task 遇到新版 Worker”，确认调度器会正确路由到兼容 Worker 而不是失败；同时加了按 `created_version` 分组的失败率看板，方便发布期间实时盯着看。上线方式改成先在一小部分流量上跑完一个完整的任务生命周期、确认没有失败再逐步扩大范围；期间也让 AI 辅助比对了发布前后的 Trace，确认所有存量 Task 都被路由到了预期的 Worker 版本。
+
+这三次修复之后，我把“Lease 解决执行权、幂等解决重复副作用、版本决定兼容性”这条通用判断标准整理成文档，分享给团队里其他维护 Worker 的同事，后续再遇到类似的恢复问题可以先对照这份文档定位，不用每次都从 Trace 重新摸索一遍。
 
 ## 这部分能够回答的面试题
 
